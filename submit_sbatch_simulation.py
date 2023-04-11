@@ -8,6 +8,8 @@ import os
 import re
 import subprocess
 
+from typing import Optional
+
 from feeg_fmri_sync import SEARCH_TYPES
 from feeg_fmri_sync.constants import (
     EEG_DIR,
@@ -17,6 +19,17 @@ from feeg_fmri_sync.constants import (
     URSA_ROOT_DIR
 )
 from feeg_fmri_sync.utils import get_fmri_filepaths
+
+def build_models_to_test(search_type: str, search_name: Optional[str]=None):
+    models = {
+        search_type: SEARCH_TYPES[search_type]
+        for search_type in args.search_type}
+    models_to_test = {
+        SEARCH_TYPES[search_type]: {
+            'name': search_name if search_name else search_type,
+            'fmri_data_generator': generate_downsampled_simulated_fmri
+        }
+}
 
 parser = argparse.ArgumentParser(
     description='Wrapper command to submit a sbatch job . **Assumes EEG and fMRI data exist for the same subjects**'
