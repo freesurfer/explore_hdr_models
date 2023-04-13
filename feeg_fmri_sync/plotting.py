@@ -7,7 +7,6 @@ import warnings
 
 from collections import defaultdict
 from matplotlib import cm
-from matplotlib.colors import LightSource
 from typing import Optional, Tuple
 
 from feeg_fmri_sync.constants import EEGData
@@ -60,58 +59,7 @@ def compare_est_fmri_with_actual(
     plt.show()
 
 
-def plot_all_search_results(df, separate_by='alpha'):
-    """Assumes df was created with
-    for d in delta:
-        for t in tau:
-            for a in alpha:
-    And that all lists are ascending
-    """
-    dta = ['delta', 'tau', 'alpha']
-    if separate_by not in dta:
-        raise ValueError(f'separate_by ({separate_by}) must be in {dta}')
-    values_to_plot = df.columns[~np.isin(df.columns, dta)]
-    vmin = np.min(df[values_to_plot].min())
-    vmax = np.max(df[values_to_plot].max())
-    subfigure_separator = np.unique(df[separate_by])
-    n_subplot_rows, n_subplot_columns = get_subplot_axes(subfigure_separator)
-    dta.remove(separate_by)
-    x_label = dta[0]
-    y_label = dta[1]
-    for column in values_to_plot:
-        fig, axs = plt.subplots(n_subplot_rows, n_subplot_columns, subplot_kw=dict(projection='3d'))
-        fig.suptitle(column)
-        fig.tight_layout()
-        for i, d in enumerate(subfigure_separator):
-            if n_subplot_rows == n_subplot_columns == 1:
-                ax = axs
-            else:
-                ax = axs.flatten()[i]
-            ax.set_title(f'{separate_by} = {d:.2f}')
-            ax.set_xlabel(f'{x_label}')
-            ax.set_ylabel(f'{y_label}')
-            ax.set_zlabel('Cost')
-            small_df = df[df[separate_by] == d]
-            x_length = len(np.unique(small_df[x_label]))
-            y_length = len(np.unique(small_df[y_label]))
-            if x_length != y_length:
-                warnings.warn(f'Code was not tested on data with different length {x_length} and {y_length}')
-            X = np.reshape(small_df[x_label].values, (x_length, y_length))
-            if not np.apply_along_axis(lambda x: np.isclose(x, x[0]).all(), 1, X).all():
-                raise ValueError('df violates order expectations. Plotting is not safe')
-            Y = np.reshape(small_df[y_label].values, (x_length, y_length))
-            if not np.isclose(Y, Y[0]).all():
-                raise ValueError('df violates order expectations. Plotting is not safe')
-            Z = np.reshape(small_df[column].values, (x_length, y_length))
-            ls = LightSource(270, 45)
-            rgb = ls.shade(Z, cmap=cm.gist_earth, vmin=vmin, vmax=vmax, vert_exag=0.1, blend_mode='soft')
-            surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, facecolors=rgb, linewidth=0, 
-                                   antialiased=False, shade=False)
-        print(f'Minimal Cost for {column} = {df[column].min()}; at\n{df[df[column] == df[column].min()][["delta", "tau", "alpha"]]}')
-        plt.show()
-
-
-def plot_all_search_results_2d(df, separate_by='alpha'):
+def plot_all_search_results_2d(df, separate_by='alpha', save_path: Optional[str] = None):
     """Assumes df was created with
     for d in delta:
         for t in tau:
@@ -159,7 +107,12 @@ def plot_all_search_results_2d(df, separate_by='alpha'):
             ax.set_ylim([np.min(small_df[y_label]), np.max(small_df[y_label])])
         plt.colorbar(cf, ax=axs.ravel().tolist())
         print(f'Minimal Cost for {column} = {df[column].min()}; at\n{df[df[column] == df[column].min()][["delta", "tau", "alpha"]]}')
-        plt.show()
+        if not save_path:
+            plt.show()
+        else:
+            plt.savefig(f'{save_path}.pdf')
+            plt.close()
+
 
 def plot_gradient_2d(grad: npt.NDArray, 
                      pts: npt.NDArray,
@@ -203,44 +156,6 @@ def plot_gradient_2d(grad: npt.NDArray,
     plt.show()
 
 
-def plot_all_search_results_one_graph(df):
-    """Assumes df was created with
-    for d in delta:
-        for t in tau:
-            for a in alpha:
-    And that all lists are ascending
-    """
-    dta = ['delta', 'tau', 'alpha']
-    values_to_plot = df.columns[~np.isin(df.columns, dta)]
-    vmin = np.min(df[values_to_plot].min())
-    vmax = np.max(df[values_to_plot].max())
-    x_label = dta[0]
-    y_label = dta[1]
-    z_label = dta[2]
-    for column in values_to_plot:
-        fig, ax = plt.subplots(1,1, subplot_kw=dict(projection='3d'))
-        ax.set_xlabel(f'{x_label}')
-        ax.set_ylabel(f'{y_label}')
-        ax.set_zlabel(f'{z_label}')
-        x_length = len(np.unique(df[x_label]))
-        y_length = len(np.unique(df[y_label]))
-        z_length = len(np.unique(df[z_label]))
-        if x_length != y_length != z_length:
-            warnings.warn(f'Code was not tested on data with different length {x_length} and {y_length}')
-        X = np.reshape(df[x_label].values, (x_length, y_length, z_length))
-        #if not np.apply_along_axis(lambda x: np.isclose(x, x[0]).all(), 1, X).all():
-        #   raise ValueError('df violates order expectations. Plotting is not safe')
-        Y = np.reshape(df[y_label].values, (x_length, y_length, z_length))
-        #if not np.isclose(Y, Y[0]).all():
-        #   raise ValueError('df violates order expectations. Plotting is not safe')
-        Z = np.reshape(df[z_label].values, (x_length, y_length, z_length))
-        colors = np.reshape(df[column].values, (x_length, y_length, z_length))
-        ls = LightSource(270, 45)
-        rgb = ls.shade(colors, cmap=cm.gist_earth, vmin=vmin, vmax=vmax, vert_exag=0.1, blend_mode='soft')
-        surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, facecolors=rgb, linewidth=0, 
-                                antialiased=False, shade=False)
-
-
 def plot_local_minima(df):
     local_minima_for_model_column = defaultdict(list)
     for model in df['model_name'].unique():
@@ -276,6 +191,7 @@ def plot_local_minima(df):
             plt.show()
 
     return local_minima_for_model_column
+
 
 def get_subplot_axes(delta_range):
     n_subplot_rows = 1

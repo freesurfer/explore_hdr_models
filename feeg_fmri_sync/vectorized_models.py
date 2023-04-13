@@ -15,10 +15,11 @@ from feeg_fmri_sync.utils import (
 )
 
 
-class VectorizedHemodynamicModel(HemodynamicModel):    
+class VectorizedHemodynamicModel(HemodynamicModel):
     def __init__(self, eeg: EEGData, fmri: fMRIData, name: str, n_tr_skip_beg: int = 1,
-                 hemodynamic_response_window: float = 30, plot: bool = True):
-        super().__init__(eeg, fmri, name, n_tr_skip_beg, hemodynamic_response_window, plot)
+                 hemodynamic_response_window: float = 30, display_plot: bool = True,
+                 save_plot_dir: Optional[str] = None):
+        super().__init__(eeg, fmri, name, n_tr_skip_beg, hemodynamic_response_window, display_plot, save_plot_dir)
 
         # Un-squeeze the fmri data
         self.fmri: fMRIData = fmri
@@ -26,7 +27,7 @@ class VectorizedHemodynamicModel(HemodynamicModel):
         # Configuration parameters
         voxel_name, _ = self.fmri.get_voxel_i(0)
         self.plot_voxels = [voxel_name]
-            
+
         # internal tracking for better performance
         self.est_fmri_n_trs: Optional[int] = None
 
@@ -53,11 +54,11 @@ class VectorizedHemodynamicModel(HemodynamicModel):
             if est_fmri.get_n_trs() < self.fmri.get_n_trs() - self.n_tr_skip_beg:
                 if self.plot:
                     print(f'Estimated fMRI is smaller than actual fMRI '
-                    f'(-# skipped TRs at beginning of EEG): '
-                    f'{est_fmri.get_n_trs()} : {self.fmri.get_n_trs()} '
-                    f'- {self.n_tr_skip_beg}')
+                          f'(-# skipped TRs at beginning of EEG): '
+                          f'{est_fmri.get_n_trs()} : {self.fmri.get_n_trs()} '
+                          f'- {self.n_tr_skip_beg}')
                 actual_fmri_compression_mask = np.logical_and(
-                    actual_fmri_compression_mask, 
+                    actual_fmri_compression_mask,
                     np.arange(self.fmri.data.shape[tr_axis]) < (est_fmri.get_n_trs() + self.n_tr_skip_beg)
                 )
                 self.transform_actual_fmri = lambda x: x.compress(actual_fmri_compression_mask, axis=tr_axis)
@@ -90,7 +91,7 @@ class VectorizedHemodynamicModel(HemodynamicModel):
         y_hat = np.matmul(X_t.T, beta)
         residual = np.subtract(y_drop_nans_t.T, y_hat).T
         degrees_of_freedom = X_t.shape[1] - X_t.shape[0]
-        residual_variance = np.sum(residual**2, axis=actual_fmri.get_tr_axis()) / degrees_of_freedom
+        residual_variance = np.sum(residual ** 2, axis=actual_fmri.get_tr_axis()) / degrees_of_freedom
         return beta, residual, residual_variance, degrees_of_freedom
 
     def score_from_hemodynamic_response(self, est_hemodynamic_response: npt.NDArray) -> npt.NDArray:
@@ -98,15 +99,17 @@ class VectorizedHemodynamicModel(HemodynamicModel):
             est_hemodynamic_response
         )
         if self.plot:
-            #print(f'Num nans in hemodynamic response to eeg: '
+            # print(f'Num nans in hemodynamic response to eeg: '
             #      f'{np.count_nonzero(np.isnan(hemodynamic_response_to_eeg))}')
-            #print(f'length of eeg: {self.eeg.data.size}')
-            #print(f'r_fmri {self.r_fmri}, '
+            # print(f'length of eeg: {self.eeg.data.size}')
+            # print(f'r_fmri {self.r_fmri}, '
             #      f'length of hemodynamic_response: {hemodynamic_response_to_eeg.size}, '
             #      f'hemodynamic_response/r_fmri: {hemodynamic_response_to_eeg.size / self.r_fmri} '
             #      f'shape of fmri data: {self.fmri.data.shape}')
             self.plot_hdr_for_eeg(hemodynamic_response_to_eeg, est_fmri)
-        
+        if self.save_plot_dir:
+            self.plot_hdr_for_eeg(hemodynamic_response_to_eeg, est_fmri, display=False)
+
         est_fmri_transform, actual_fmri_transform = self.get_transformation_functions(
             fMRIData(est_fmri, self.fmri.TR)
         )
@@ -117,7 +120,7 @@ class VectorizedHemodynamicModel(HemodynamicModel):
             voxel_names=self.fmri.voxel_names
         )
         beta, residual, residual_variance, degrees_of_freedom = self.fit_glm(
-            est_fmri, 
+            est_fmri,
             actual_fmri
         )
         residual = fMRIData(
@@ -129,10 +132,27 @@ class VectorizedHemodynamicModel(HemodynamicModel):
             for voxel_name in self.plot_voxels:
                 i, voxel_data = actual_fmri.get_voxel_by_name(voxel_name)
                 _, residual_data = residual.get_voxel_by_name(voxel_name)
-                self.compare_est_fmri_with_actual(est_fmri.data, voxel_data, residual_data, actual_fmri_name=voxel_name)
+                self.compare_est_fmri_with_actual(
+                    est_fmri.data,
+                    voxel_data,
+                    residual_data,
+                    residual_variance[i].item(),
+                    actual_fmri_name=voxel_name
+                )
                 print(f'Residual Variance is {residual_variance[i].item():.6f}')
+        if self.save_plot_dir:
+            for voxel_name in self.plot_voxels:
+                i, voxel_data = actual_fmri.get_voxel_by_name(voxel_name)
+                _, residual_data = residual.get_voxel_by_name(voxel_name)
+                self.compare_est_fmri_with_actual(
+                    est_fmri.data,
+                    voxel_data,
+                    residual_data,
+                    residual_variance[i].item(),
+                    actual_fmri_name=voxel_name,
+                    display=False
+                )
         return residual_variance
-
 
 
 class VectorizedSumEEGHemodynamicModel(VectorizedHemodynamicModel):
