@@ -115,7 +115,11 @@ class VectorizedHemodynamicModel(HemodynamicModel):
             est_fmri, 
             actual_fmri
         )
-        residual = fMRIData(residual, TR=self.fmri.TR, voxel_names=self.fmri.voxel_names)
+        residual = fMRIData(
+            residual,
+            TR=self.fmri.TR,
+            voxel_names=actual_fmri_transform(self.fmri.voxel_names)
+        )
         if self.plot:
             for voxel_name in self.plot_voxels:
                 i, voxel_data = actual_fmri.get_voxel_by_name(voxel_name)
