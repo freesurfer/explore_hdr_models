@@ -17,6 +17,11 @@ from tests.data.hdr import HDR
 
 PLOT = True
 
+
+def test_get_i_for_subj_and_run():
+    raise NotImplementedError()
+
+
 class TestGetEstHemodynamicResponse:
     time_steps = np.arange(stop=4, step=0.5)
     delta = 2.25

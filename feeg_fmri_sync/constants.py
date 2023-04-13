@@ -17,6 +17,10 @@ NUMBER_OF_TASKS = 500
 
 EEGData = namedtuple('EEGData', ['data', 'sample_frequency'])
 
+PLOT_DELTA = 2.25
+PLOT_TAU = 1.25
+PLOT_ALPHA = 2
+
 
 class fMRIData:
     """

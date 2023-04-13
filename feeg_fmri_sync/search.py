@@ -5,7 +5,7 @@ import pandas as pd
 import time
 import warnings
 
-from typing import Dict, Any, List, Type
+from typing import Dict, Any, List, Type, Optional
 
 from feeg_fmri_sync import VectorizedHemodynamicModel
 from feeg_fmri_sync.constants import EEGData, fMRIData
@@ -26,9 +26,13 @@ def build_models(
         n_trs_skipped_at_beginning: int = 0,
         eeg_sample_freq: float = 20,
         hemodynamic_response_window: float = 30,
-        plot: bool = False) -> Dict[str, VectorizedHemodynamicModel]:
-
-    eeg_data_by_name = generate_eeg_data(eeg_data_options, eeg_sample_freq)
+        plot: bool = False,
+        eeg_data_by_name: Optional[Dict[str, EEGData]] = None) -> Dict[str, VectorizedHemodynamicModel]:
+    """
+    Build models used in search_voxels
+    """
+    if not eeg_data_by_name:
+        eeg_data_by_name = generate_eeg_data(eeg_data_options, eeg_sample_freq)
     models = {}
     for hemodynamic_model in model_to_fmri:
         fmri_names = [fmri_name for fmri_name in model_to_fmri[hemodynamic_model]['fmri_data_options'].keys()]
@@ -48,7 +52,7 @@ def build_models(
     return models
 
 
-def search_voxels(models, delta_range, tau_range, alpha_range):
+def search_voxels(models, delta_range, tau_range, alpha_range, verbose=True):
     descriptions = []
     data = []
     model_names = np.array([k for k in models.keys()])
@@ -59,8 +63,15 @@ def search_voxels(models, delta_range, tau_range, alpha_range):
             raise ValueError(f"All models must share voxel names in the same order to search together. {model_name} has different values from {model_names[0]}")
     if len(models) > 1:
         model_names = model_names.reshape((len(models), 1))
-    for delta in delta_range: 
-        print(f"Scoring delta={delta}")
+    tstart = time.time()
+    for i, delta in enumerate(delta_range):
+        tend = time.time()
+        if verbose and i > 0:
+            print(f'Delta: {delta:.5f} ({i / len(delta_range) * 100:.2f}%). '
+                  f'Last voxel took {tend - tstart:.2f} seconds')
+        elif verbose:
+            print(f'Delta: {delta:.5f} ({i / len(delta_range) * 100:.2f}%).')
+        tstart = time.time()
         for tau in tau_range: 
             for alpha in alpha_range: 
                 scores = []
@@ -89,58 +100,3 @@ def search_voxels(models, delta_range, tau_range, alpha_range):
         ret_desc.name = f'{model_name}'
         descriptions.append(ret_desc)    
     return descriptions, df
-
-
-def run_simulated_search(model_to_fmri: Dict[Type[VectorizedHemodynamicModel], ModelToFMRI],
-                         eeg_data_options: List[str],
-                         tr: float,
-                         n_trs_skipped_at_beginning: int,
-                         eeg_sample_freq: float,
-                         hemodynamic_response_window: float,
-                         plot: bool,
-                         delta: npt.ArrayLike, 
-                         tau: npt.ArrayLike,
-                         alpha: npt.ArrayLike,
-                         save_to: str = 'simulation.csv',
-                         ideal_delta: float = 2.25,
-                         ideal_tau: float = 1.25,
-                         ideal_alpha: float = 2.) -> pd.DataFrame:
-
-    models = build_models(
-        model_to_fmri,
-        eeg_data_options,
-        tr,
-        n_trs_skipped_at_beginning,
-        eeg_sample_freq,
-        hemodynamic_response_window,
-        plot
-    )
-    
-    for model_name, model in models.items():
-        residual_var = model.score(ideal_delta, ideal_tau, ideal_alpha)
-        fmri_names = np.array(model.fmri.voxel_names)
-        if (fmri_names == None).any():
-            print(f'Residual variance was {residual_var}')
-        else:
-            noise_levels = np.char.replace(fmri_names, 'perfect', '0noise_trail0')
-            noise_levels = np.char.partition(noise_levels, sep='noise')
-            res_var_df = pd.DataFrame(zip(noise_levels[:,0].astype(int), residual_var), columns=['Noise', 'res_var'])
-            res_var_by_noise = res_var_df.groupby('Noise')
-            _, axs = plt.subplots()
-            axs.set_title(model_name)
-            axs.set_ylabel('Residual Variance')
-            axs.set_xlabel('Noise')
-            axs = res_var_by_noise.boxplot(column='res_var', subplots=False, rot=45, ax=axs)
-            labels = res_var_by_noise.count()
-            labels = [f'{noise}, N={n.item()}' for noise, n in zip(labels.index, labels.values)]
-            plt.setp(axs, xticklabels=labels)
-            plt.show()
-        model.plot = False
-    
-    descriptions, df = search_voxels(models, delta, tau, alpha)
-    with open(save_to, 'w') as f:
-        pd.DataFrame(df).to_csv(f)
-    for model_name, description in zip(models.keys(), descriptions):
-        with open(f'{model_name}_summary_{save_to}', 'w') as f:
-            pd.DataFrame(description).transpose().to_csv(f)
-    return df

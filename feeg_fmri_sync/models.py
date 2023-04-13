@@ -24,7 +24,7 @@ class GridSearch:
 
 class HemodynamicModel:    
     def __init__(self, eeg: EEGData, fmri: fMRIData, name: str, n_tr_skip_beg: int = 1, 
-                 hemodynamic_response_window: int = 30, plot: bool = True):
+                 hemodynamic_response_window: float = 30, plot: bool = True):
         # Data
         self.eeg: EEGData = eeg
         self.fmri: fMRIData = fMRIData(data=fmri.data.squeeze(), TR=fmri.TR)
@@ -36,11 +36,11 @@ class HemodynamicModel:
         self.n_tr_skip_beg: int = n_tr_skip_beg
         
         # Tunable parameters
-        self.hemodynamic_response_window:float  =  hemodynamic_response_window  # seconds
+        self.hemodynamic_response_window: float = hemodynamic_response_window  # seconds
         
         # Configuration parameters
-        self.name = name
-        self.plot = plot        
+        self.name: str = name
+        self.plot: bool = plot
 
         # internal tracking for better performance
         self.transform_est_fmri: Optional[Callable] = None

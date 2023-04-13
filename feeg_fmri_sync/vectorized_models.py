@@ -18,36 +18,20 @@ from feeg_fmri_sync.utils import (
 
 
 class VectorizedHemodynamicModel(HemodynamicModel):    
-    def __init__(
-            self,
-            eeg: EEGData,
-            fmri: fMRIData,
-            name: str,
-            n_tr_skip_beg: int = 1,
-            hemodynamic_response_window: float = 30,
-            plot: bool = True):
+    def __init__(self, eeg: EEGData, fmri: fMRIData, name: str, n_tr_skip_beg: int = 1,
+                 hemodynamic_response_window: float = 30, plot: bool = True):
+
         # Data
-        self.eeg: EEGData = eeg
+        super().__init__(eeg, fmri, name, n_tr_skip_beg, hemodynamic_response_window, plot)
+
+        # Un-squeeze the fmri data
         self.fmri: fMRIData = fmri
-        #print(f'Num eeg nans: {np.count_nonzero(np.isnan(self.eeg.data))}')
-        
-        # Ratio of eeg freq to fMRI frequency
-        self.r_fmri: float = get_ratio_eeg_freq_to_fmri_freq(self.eeg.sample_frequency, self.fmri.TR)
-        # Number of TRs skipped at beginning of EEG
-        self.n_tr_skip_beg: int = n_tr_skip_beg
-        
-        # Tunable parameters
-        self.hemodynamic_response_window: float = hemodynamic_response_window  # seconds
-        
+
         # Configuration parameters
-        self.name: str = name
-        self.plot: bool = plot
         voxel_name, _ = self.fmri.get_voxel_i(0)
         self.plot_voxels = [voxel_name]
             
         # internal tracking for better performance
-        self.transform_est_fmri: Optional[Callable] = None
-        self.transform_actual_fmri: Optional[Callable] = None
         self.est_fmri_n_trs: Optional[int] = None
 
     def set_plot_voxels(self, voxel_names_to_plot):
