@@ -5,11 +5,12 @@ import pandas as pd
 import time
 import warnings
 
-from typing import Dict, Any
+from typing import Dict, Any, List, Type
 
-
+from feeg_fmri_sync import VectorizedHemodynamicModel
 from feeg_fmri_sync.constants import EEGData, fMRIData
 from feeg_fmri_sync.models import HemodynamicModel
+from feeg_fmri_sync.simulations import ModelToFMRI, generate_eeg_data
 
 
 def get_suitable_range(start: int, end: int, num_points: int):
@@ -18,28 +19,33 @@ def get_suitable_range(start: int, end: int, num_points: int):
     return np.arange(start, end+step, step)
 
 
-def search_voxel(models, delta_range, tau_range, alpha_range, get_all_data=False):
-    warnings.warn("Soon to be deprecated! Use search_voxels")
-    descriptions = []
-    data = []
-    for delta in delta_range:
-        for tau in tau_range: 
-            for alpha in alpha_range:
-                scores = []
-                for model in models.values():
-                    scores.append(model.score(delta, tau, alpha))
-                data.append([delta, tau, alpha]+scores)
-    df = pd.DataFrame(data, columns=['delta', 'tau', 'alpha'] + [k for k in models.keys()])
-    for model_name in models.keys():
-        description = df[model_name].describe()
-        description.name = f'{model_name}_{voxel}'
-        for column_name in ['delta', 'tau', 'alpha']:
-            min_val = df[df[model_name] == df[model_name].min()][column_name].iloc[0]
-            description[column_name] = min_val
-        descriptions.append(description)
-    if get_all_data:
-        return df
-    return descriptions
+def build_models(
+        model_to_fmri: Dict[Type[VectorizedHemodynamicModel], ModelToFMRI],
+        eeg_data_options: List[str],
+        tr: float = 800,
+        n_trs_skipped_at_beginning: int = 0,
+        eeg_sample_freq: float = 20,
+        hemodynamic_response_window: float = 30,
+        plot: bool = False) -> Dict[str, VectorizedHemodynamicModel]:
+
+    eeg_data_by_name = generate_eeg_data(eeg_data_options, eeg_sample_freq)
+    models = {}
+    for hemodynamic_model in model_to_fmri:
+        fmri_names = [fmri_name for fmri_name in model_to_fmri[hemodynamic_model]['fmri_data_options'].keys()]
+        fmri_data = np.array([fmri.data for fmri in model_to_fmri[hemodynamic_model]['fmri_data_options'].values()])
+        fmri = fMRIData(data=fmri_data, TR=tr, voxel_names=fmri_names)
+        for eeg_data_name, eeg_data in eeg_data_by_name.items():
+            name = f'{model_to_fmri[hemodynamic_model]["name"]}_{eeg_data_name}'
+            models[name] = hemodynamic_model(
+                eeg=eeg_data,
+                fmri=fmri,
+                name=name,
+                n_tr_skip_beg=n_trs_skipped_at_beginning,
+                hemodynamic_response_window=hemodynamic_response_window,
+                plot=plot
+            )
+            models[name].set_plot_voxels(model_to_fmri[hemodynamic_model]['fmri_to_plot'])
+    return models
 
 
 def search_voxels(models, delta_range, tau_range, alpha_range):
@@ -85,10 +91,11 @@ def search_voxels(models, delta_range, tau_range, alpha_range):
     return descriptions, df
 
 
-def run_simulated_search(model_to_fmri: Dict[HemodynamicModel, Dict[str, Any]], 
-                         eeg_data_options: Dict[str, npt.NDArray],
+def run_simulated_search(model_to_fmri: Dict[Type[VectorizedHemodynamicModel], ModelToFMRI],
+                         eeg_data_options: List[str],
                          tr: float,
-                         n_tr_skipped_at_beginning: int,
+                         n_trs_skipped_at_beginning: int,
+                         eeg_sample_freq: float,
                          hemodynamic_response_window: float,
                          plot: bool,
                          delta: npt.ArrayLike, 
@@ -98,22 +105,16 @@ def run_simulated_search(model_to_fmri: Dict[HemodynamicModel, Dict[str, Any]],
                          ideal_delta: float = 2.25,
                          ideal_tau: float = 1.25,
                          ideal_alpha: float = 2.) -> pd.DataFrame:
-    models = {}
-    for hemodynamic_model in model_to_fmri:
-        fmri_names = [fmri_name for fmri_name in model_to_fmri[hemodynamic_model]['fmri_data_options'].keys()]
-        fmri_data = np.array([fmri.data for fmri in model_to_fmri[hemodynamic_model]['fmri_data_options'].values()])
-        fmri = fMRIData(data=fmri_data, TR=tr, voxel_names=fmri_names)
-        for eeg_data_name, eeg_data in eeg_data_options.items():
-            name = f'{model_to_fmri[hemodynamic_model]["name"]}_{eeg_data_name}'
-            models[name] = hemodynamic_model(
-                eeg=eeg_data,
-                fmri=fmri,
-                name=name,
-                n_tr_skip_beg=n_tr_skipped_at_beginning,
-                hemodynamic_response_window=hemodynamic_response_window,
-                plot=plot
-            )
-            models[name].set_plot_voxels(model_to_fmri[hemodynamic_model]['fmri_to_plot']) 
+
+    models = build_models(
+        model_to_fmri,
+        eeg_data_options,
+        tr,
+        n_trs_skipped_at_beginning,
+        eeg_sample_freq,
+        hemodynamic_response_window,
+        plot
+    )
     
     for model_name, model in models.items():
         residual_var = model.score(ideal_delta, ideal_tau, ideal_alpha)

@@ -73,8 +73,8 @@ class HemodynamicModel:
         if residual is not None:
             X_nan = np.isnan(est_fmri)
             plt.plot(time_steps_for_fmri[~X_nan], residual, '.', label='Residual')
-        plt.plot(time_steps_for_fmri, est_fmri, label='Estimated fMRI')
         plt.plot(time_steps_for_fmri, actual_fmri, label='Actual fMRI')
+        plt.plot(time_steps_for_fmri, est_fmri, label='Estimated fMRI')
         plt.plot(time_steps_for_eeg, self.eeg.data, label='EEG spikes')
         if not actual_fmri_name:
             title = f'Estimated fMRI HDR from EEG spikes compared with actual fMRI using model={self.name}'

@@ -35,14 +35,14 @@ def plot_hdr_for_eeg(eeg_data: EEGData, hdr: npt.NDArray, tr: Optional[int] = No
 
 
 def compare_est_fmri_with_actual(
-    est_fmri: npt.NDArray, 
-    actual_fmri: npt.NDArray, 
-    eeg_data: EEGData, 
-    tr: int,
-    residual: Optional[npt.NDArray] = None,
-    title: Optional[str] = None,
-    est_fmri_label: str = 'Estimated fMRI',
-    actual_fmri_label: str = 'Actual fMRI'):
+        est_fmri: npt.NDArray,
+        actual_fmri: npt.NDArray,
+        eeg_data: EEGData,
+        tr: float,
+        residual: Optional[npt.NDArray] = None,
+        title: Optional[str] = None,
+        est_fmri_label: str = 'Estimated fMRI',
+        actual_fmri_label: str = 'Actual fMRI'):
     """"""
     plt.cla()
     time_steps_for_eeg = np.arange(len(eeg_data.data)) / eeg_data.sample_frequency
@@ -110,6 +110,7 @@ def plot_all_search_results(df, separate_by='alpha'):
         print(f'Minimal Cost for {column} = {df[column].min()}; at\n{df[df[column] == df[column].min()][["delta", "tau", "alpha"]]}')
         plt.show()
 
+
 def plot_all_search_results_2d(df, separate_by='alpha'):
     """Assumes df was created with
     for d in delta:
@@ -156,7 +157,7 @@ def plot_all_search_results_2d(df, separate_by='alpha'):
             cf = ax.contourf(X, Y, Z, cmap=cm.gist_earth, vmin=vmin, vmax=vmax)
             ax.set_xlim([np.min(small_df[x_label]), np.max(small_df[x_label])])
             ax.set_ylim([np.min(small_df[y_label]), np.max(small_df[y_label])])
-            fig.colorbar(cf, ax=ax)
+        plt.colorbar(cf, ax=axs.ravel().tolist())
         print(f'Minimal Cost for {column} = {df[column].min()}; at\n{df[df[column] == df[column].min()][["delta", "tau", "alpha"]]}')
         plt.show()
 

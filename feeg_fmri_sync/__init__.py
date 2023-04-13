@@ -17,14 +17,14 @@ from feeg_fmri_sync.vectorized_models import (
 SEARCH_TYPES = {
     'classic_hemodynamic': {
         'model': VectorizedHemodynamicModel,
-        'simulation': generate_downsampled_simulated_fmri,
+        'simulation_generator': generate_downsampled_simulated_fmri,
     },
     'hemodynamic_sum_eeg': {
         'model': VectorizedSumEEGHemodynamicModel,
-        'simulation': generate_summed_simulated_fmri,
+        'simulation_generator': generate_summed_simulated_fmri,
     },
 }
 
 VALID_KWARGS = [
-    inspect.signature(model) for model in SEARCH_TYPES.values()
+    inspect.signature(model['model']) for model in SEARCH_TYPES.values()
 ]

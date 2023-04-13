@@ -16,9 +16,16 @@ from feeg_fmri_sync.utils import (
     sum_hdr_for_eeg,
 )
 
+
 class VectorizedHemodynamicModel(HemodynamicModel):    
-    def __init__(self, eeg: EEGData, fmri: fMRIData, name: str, n_tr_skip_beg: int = 1, 
-                 hemodynamic_response_window: int = 30, plot: bool = True):
+    def __init__(
+            self,
+            eeg: EEGData,
+            fmri: fMRIData,
+            name: str,
+            n_tr_skip_beg: int = 1,
+            hemodynamic_response_window: float = 30,
+            plot: bool = True):
         # Data
         self.eeg: EEGData = eeg
         self.fmri: fMRIData = fmri
@@ -30,7 +37,7 @@ class VectorizedHemodynamicModel(HemodynamicModel):
         self.n_tr_skip_beg: int = n_tr_skip_beg
         
         # Tunable parameters
-        self.hemodynamic_response_window: float =  hemodynamic_response_window  # seconds
+        self.hemodynamic_response_window: float = hemodynamic_response_window  # seconds
         
         # Configuration parameters
         self.name: str = name
