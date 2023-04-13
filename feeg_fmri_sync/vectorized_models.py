@@ -20,8 +20,6 @@ from feeg_fmri_sync.utils import (
 class VectorizedHemodynamicModel(HemodynamicModel):    
     def __init__(self, eeg: EEGData, fmri: fMRIData, name: str, n_tr_skip_beg: int = 1,
                  hemodynamic_response_window: float = 30, plot: bool = True):
-
-        # Data
         super().__init__(eeg, fmri, name, n_tr_skip_beg, hemodynamic_response_window, plot)
 
         # Un-squeeze the fmri data
@@ -108,7 +106,11 @@ class VectorizedHemodynamicModel(HemodynamicModel):
             fMRIData(est_fmri, self.fmri.TR)
         )
         est_fmri = fMRIData(est_fmri_transform(est_fmri), self.fmri.TR)
-        actual_fmri = fMRIData(actual_fmri_transform(self.fmri.data), self.fmri.TR, voxel_names=self.fmri.voxel_names)
+        actual_fmri = fMRIData(
+            actual_fmri_transform(self.fmri.data),
+            self.fmri.TR,
+            voxel_names=actual_fmri_transform(self.fmri.voxel_names)
+        )
         beta, residual, residual_variance, degrees_of_freedom = self.fit_glm(
             est_fmri, 
             actual_fmri
