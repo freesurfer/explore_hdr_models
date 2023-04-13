@@ -75,7 +75,9 @@ class fMRIData:
     def get_voxel_by_name(self, name) -> Tuple[npt.NDArray, npt.NDArray]:
         i = np.where(self.voxel_names == name)
         if len(i) != 1:
-            raise ValueError(f'{name} is not present exactly once in voxel_names: {self.voxel_names}')
+            raise ValueError(f'{name} present more than once in voxel_names: {self.voxel_names}')
+        if i[0].size != 1:
+            raise ValueError(f'{name} is not present in voxel_names: {self.voxel_names}')
         # TODO: is it possible to return this dynamically?
         # WARNING: if axis changes, this will currently fail
         return i, self.data[i[0].item(), :]

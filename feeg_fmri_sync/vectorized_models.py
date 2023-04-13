@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 import warnings
@@ -12,7 +11,6 @@ from feeg_fmri_sync.constants import (
 from feeg_fmri_sync.models import HemodynamicModel
 from feeg_fmri_sync.utils import (
     get_hdr_for_eeg,
-    get_ratio_eeg_freq_to_fmri_freq,
     sum_hdr_for_eeg,
 )
 
@@ -39,23 +37,30 @@ class VectorizedHemodynamicModel(HemodynamicModel):
         if not self.transform_est_fmri or not self.transform_actual_fmri or self.est_fmri_n_trs != est_fmri.get_n_trs():
             if self.est_fmri_n_trs and self.est_fmri_n_trs != est_fmri.get_n_trs():
                 print(f'WARNING: estimated fMRI size changed! {self.est_fmri_n_trs} -> {est_fmri.get_n_trs()}')
+            tr_axis = self.fmri.get_tr_axis()
+            actual_fmri_compression_mask = np.arange(self.fmri.data.shape[tr_axis]) >= self.n_tr_skip_beg
             self.est_fmri_n_trs = est_fmri.get_n_trs()
             self.transform_est_fmri = lambda x: x
-            self.transform_actual_fmri = lambda x: x[self.n_tr_skip_beg:]
+            self.transform_actual_fmri = lambda x: x.compress(actual_fmri_compression_mask, axis=tr_axis)
             if est_fmri.get_n_trs() > self.fmri.get_n_trs() - self.n_tr_skip_beg:
                 if self.plot:
                     print(f'Estimated fMRI is larger than actual fMRI '
                           f'(-# skipped TRs at beginning of EEG): '
                           f'{est_fmri.get_n_trs()} : {self.fmri.get_n_trs()} - '
                           f'{self.n_tr_skip_beg}')
-                self.transform_est_fmri = lambda x: x[:self.fmri.get_n_trs()]
+                est_fmri_compression_mask = np.arange(self.fmri.data.shape[tr_axis]) < self.fmri.get_n_trs()
+                self.transform_est_fmri = lambda x: x.compress(est_fmri_compression_mask, axis=tr_axis)
             if est_fmri.get_n_trs() < self.fmri.get_n_trs() - self.n_tr_skip_beg:
                 if self.plot:
                     print(f'Estimated fMRI is smaller than actual fMRI '
                     f'(-# skipped TRs at beginning of EEG): '
                     f'{est_fmri.get_n_trs()} : {self.fmri.get_n_trs()} '
                     f'- {self.n_tr_skip_beg}')
-                self.transform_actual_fmri = lambda x: x[self.n_tr_skip_beg:(est_fmri.get_n_trs() + self.n_tr_skip_beg)]
+                actual_fmri_compression_mask = np.logical_and(
+                    actual_fmri_compression_mask, 
+                    np.arange(self.fmri.data.shape[tr_axis]) < (est_fmri.get_n_trs() + self.n_tr_skip_beg)
+                )
+                self.transform_actual_fmri = lambda x: x.compress(actual_fmri_compression_mask, axis=tr_axis)
         return self.transform_est_fmri, self.transform_actual_fmri
 
     def fit_glm(self, est_fmri: fMRIData, actual_fmri: fMRIData) -> Tuple[
@@ -109,7 +114,7 @@ class VectorizedHemodynamicModel(HemodynamicModel):
         actual_fmri = fMRIData(
             actual_fmri_transform(self.fmri.data),
             self.fmri.TR,
-            voxel_names=actual_fmri_transform(self.fmri.voxel_names)
+            voxel_names=self.fmri.voxel_names
         )
         beta, residual, residual_variance, degrees_of_freedom = self.fit_glm(
             est_fmri, 
@@ -118,7 +123,7 @@ class VectorizedHemodynamicModel(HemodynamicModel):
         residual = fMRIData(
             residual,
             TR=self.fmri.TR,
-            voxel_names=actual_fmri_transform(self.fmri.voxel_names)
+            voxel_names=self.fmri.voxel_names
         )
         if self.plot:
             for voxel_name in self.plot_voxels:
