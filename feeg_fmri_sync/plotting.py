@@ -326,9 +326,9 @@ def plot_eeg_hdr_across_delta_tau_alpha_range(eeg: EEGData, hdr_window: float, t
     time_steps_for_eeg = np.arange(len(eeg.data)) / eeg.sample_frequency
     time_steps_for_fmri = time_steps_for_eeg[::r_fmri]
     fmri_hdr_lookup = {}
-    pregen_delta_range = delta_range if PLOT_DELTA in delta_range else np.concatenate([delta_range, PLOT_DELTA])
-    pregen_tau_range = tau_range if PLOT_TAU in tau_range else np.concatenate([tau_range, PLOT_TAU])
-    pregen_alpha_range = alpha_range if PLOT_ALPHA in alpha_range else np.concatenate([alpha_range, PLOT_ALPHA])
+    pregen_delta_range = delta_range if PLOT_DELTA in delta_range else np.concatenate([delta_range, np.array([PLOT_DELTA])])
+    pregen_tau_range = tau_range if PLOT_TAU in tau_range else np.concatenate([tau_range, np.array([PLOT_TAU])])
+    pregen_alpha_range = alpha_range if PLOT_ALPHA in alpha_range else np.concatenate([alpha_range, np.array([PLOT_ALPHA])])
     for delta in pregen_delta_range:
         for tau in pregen_tau_range:
             for alpha in pregen_alpha_range:
