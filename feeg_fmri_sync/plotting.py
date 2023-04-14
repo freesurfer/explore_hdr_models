@@ -347,6 +347,14 @@ def plot_eeg_hdr_across_delta_tau_alpha_range(eeg: EEGData, hdr_window: float, t
                 fmri_hdr_for_eeg = downsample_hdr_for_eeg(r_fmri, hdr_for_eeg)
                 fmri_hdr_lookup[(delta, tau, alpha)] = fmri_hdr_for_eeg
 
+    if verbose:
+        print(pregen_delta_range)
+        print(delta_range)
+        print(pregen_tau_range)
+        print(tau_range)
+        print(pregen_alpha_range)
+        print(tau)
+        print(fmri_hdr_lookup.keys())
     x_start = 25
     x_length = 10
     try:
