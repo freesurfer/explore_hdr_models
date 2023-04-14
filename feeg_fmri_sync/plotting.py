@@ -106,11 +106,75 @@ def plot_all_search_results_2d(df, separate_by='alpha', save_path: Optional[str]
             ax.set_xlim([np.min(small_df[x_label]), np.max(small_df[x_label])])
             ax.set_ylim([np.min(small_df[y_label]), np.max(small_df[y_label])])
         plt.colorbar(cf, ax=axs.ravel().tolist())
-        print(f'Minimal Cost for {column} = {df[column].min()}; at\n{df[df[column] == df[column].min()][["delta", "tau", "alpha"]]}')
         if not save_path:
+            print(f'Minimal Cost for {column} = {df[column].min()}; at\n{df[df[column] == df[column].min()][["delta", "tau", "alpha"]]}')
             plt.show()
         else:
-            plt.savefig(f'{save_path}.pdf')
+            plt.savefig(f'{save_path}_voxel{column}.pdf')
+            plt.close()
+
+
+def generate_latex_label(text):
+    if text in ['tau', 'alpha']:
+        return f'$\\{text}$'
+    return f'$\{text}$'
+
+
+def plot_all_search_results_2d_on_diff_colormaps(df, separate_by='alpha', save_path: Optional[str] = None):
+    """Assumes df was created with
+    for d in delta:
+        for t in tau:
+            for a in alpha:
+    And that all lists are ascending
+    """
+    df = df.astype(float)
+    dta = ['delta', 'tau', 'alpha']
+    if separate_by not in dta:
+        raise ValueError(f'separate_by ({separate_by}) must be in {dta}')
+    values_to_plot = df.columns[~np.isin(df.columns, dta)]
+
+    subfigure_separator = np.unique(df[separate_by])
+    n_subplot_rows, n_subplot_columns = get_subplot_axes(subfigure_separator)
+    dta.remove(separate_by)
+    x_label = dta[0]
+    y_label = dta[1]
+    for column in values_to_plot:
+        fig, axs = plt.subplots(n_subplot_rows, n_subplot_columns)
+        fig.suptitle(column)
+        fig.tight_layout()
+        vmin = np.min(df[column].min())
+        vmax = np.max(df[column].max())
+        for i, d in enumerate(subfigure_separator):
+            if n_subplot_rows == n_subplot_columns == 1:
+                ax = axs
+            else:
+                ax = axs.flatten()[i]
+            ax.set_title(f'{generate_latex_label(separate_by)} = {d:.2f}')
+            if i/n_subplot_columns in range(n_subplot_rows):
+                ax.set_ylabel(generate_latex_label(y_label))
+            if i/n_subplot_columns == n_subplot_rows - 1:
+                ax.set_xlabel(generate_latex_label(x_label))
+            small_df = df[df[separate_by] == d]
+            x_length = len(np.unique(small_df[x_label]))
+            y_length = len(np.unique(small_df[y_label]))
+            if x_length != y_length:
+                warnings.warn(f'Code was not tested on data with different length {x_length} and {y_length}')
+            X = np.reshape(small_df[x_label].values, (x_length, y_length))
+            if not np.apply_along_axis(lambda x: np.isclose(x, x[0]).all(), 1, X).all():
+                raise ValueError('df violates order expectations. Plotting is not safe')
+            Y = np.reshape(small_df[y_label].values, (x_length, y_length))
+            if not np.isclose(Y, Y[0]).all():
+                raise ValueError('df violates order expectations. Plotting is not safe')
+            Z = np.reshape(small_df[column].values, (x_length, y_length))
+            cf = ax.contourf(X, Y, Z, cmap=cm.gist_earth, vmin=vmin, vmax=vmax)
+            ax.set_xlim([np.min(small_df[x_label]), np.max(small_df[x_label])])
+            ax.set_ylim([np.min(small_df[y_label]), np.max(small_df[y_label])])
+        plt.colorbar(cf, ax=axs.ravel().tolist())
+        if not save_path:
+            print(f'Minimal Cost for {column} = {df[column].min()}; at\n{df[df[column] == df[column].min()][["delta", "tau", "alpha"]]}')
+            plt.show()
+        else:
+            plt.savefig(f'{save_path}_voxel{column}.pdf')
             plt.close()
 
 

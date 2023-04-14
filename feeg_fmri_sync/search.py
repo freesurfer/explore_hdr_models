@@ -68,7 +68,7 @@ def search_voxels(models, delta_range, tau_range, alpha_range, verbose=True):
         tend = time.time()
         if verbose and i > 0:
             print(f'Delta: {delta:.5f} ({i / len(delta_range) * 100:.2f}%). '
-                  f'Last voxel took {tend - tstart:.2f} seconds')
+                  f'Last tau/alpha search took {tend - tstart:.2f} seconds')
         elif verbose:
             print(f'Delta: {delta:.5f} ({i / len(delta_range) * 100:.2f}%).')
         tstart = time.time()
