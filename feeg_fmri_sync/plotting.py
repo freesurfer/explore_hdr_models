@@ -284,25 +284,36 @@ def plot_eeg_hdrs_across_range(
         y_range: npt.ArrayLike,
         z_label: str,
         z_range: npt.ArrayLike,
-        fmri_hdr_lookup: Dict[Tuple, npt.ArrayLike],
+        fmri_hdr_lookup_fn: Callable,
         fmri_time_steps: npt.ArrayLike,
         x_start: int = 100,
         x_length: int = 10) -> plt.Figure:
     # Zoom in since change is very small
+    def get_key(x_val, y_val, z_val):
+        key = []
+        for label in ['delta', 'tau', 'alpha']:
+            if x_label == label:
+                key.append(x_val)
+            elif y_label == label:
+                key.append(y_val)
+            elif z_label == label:
+                key.append(z_val)
+        return tuple(key)
+
     fig, axs = plt.subplots(3, 3, sharex='all', sharey='all', figsize=(14, 8))
     fig.supxlabel(f'${generate_latex_label(x_label, add_dollars=False)} \longrightarrow$', fontsize=24)
     fig.supylabel(f'${generate_latex_label(y_label, add_dollars=False)} \longrightarrow$', fontsize=24)
-    for i, tau in enumerate(reversed(y_range)):
-        for j, alpha in enumerate(x_range):
+    for i, y in enumerate(reversed(y_range)):
+        for j, x in enumerate(x_range):
             ax = axs[i][j]
-            ax.set_title(f'${generate_latex_label(y_label, add_dollars=False)}={tau:.2f}, '
-                         f'{generate_latex_label(x_label, add_dollars=False)}={alpha:.2f}$')
-            for delta in z_range:
-                fmri_hdr_for_eeg = fmri_hdr_lookup[(delta, tau, alpha)]
+            ax.set_title(f'${generate_latex_label(y_label, add_dollars=False)}={y:.2f}, '
+                         f'{generate_latex_label(x_label, add_dollars=False)}={x:.2f}$')
+            for z in z_range:
+                fmri_hdr_for_eeg = fmri_hdr_lookup_fn(*get_key(x, y, z))
                 ax.plot(
                     fmri_time_steps,
                     fmri_hdr_for_eeg,
-                    label=f'${generate_latex_label(z_label, add_dollars=False)}={delta:.2f}$',
+                    label=f'${generate_latex_label(z_label, add_dollars=False)}={z:.2f}$',
                     linewidth=0.5,
                 )
             ax.set_xlim(x_start, x_start+x_length)
@@ -328,10 +339,13 @@ def plot_eeg_hdr_across_delta_tau_alpha_range(eeg: EEGData, hdr_window: float, t
     r_fmri = get_ratio_eeg_freq_to_fmri_freq(eeg.sample_frequency, tr)
     time_steps_for_eeg = np.arange(len(eeg.data)) / eeg.sample_frequency
     time_steps_for_fmri = time_steps_for_eeg[::r_fmri]
-    fmri_hdr_lookup = {}
-    pregen_delta_range = delta_range if PLOT_DELTA in delta_range else np.concatenate([delta_range, np.array([PLOT_DELTA])])
-    pregen_tau_range = tau_range if PLOT_TAU in tau_range else np.concatenate([tau_range, np.array([PLOT_TAU])])
-    pregen_alpha_range = alpha_range if PLOT_ALPHA in alpha_range else np.concatenate([alpha_range, np.array([PLOT_ALPHA])])
+
+    pregen_delta_range = delta_range if PLOT_DELTA in delta_range else np.concatenate([delta_range, [PLOT_DELTA]])
+    pregen_tau_range = tau_range if PLOT_TAU in tau_range else np.concatenate([tau_range, [PLOT_TAU]])
+    pregen_alpha_range = alpha_range if PLOT_ALPHA in alpha_range else np.concatenate([alpha_range, [PLOT_ALPHA]])
+    fmri_hdr_lookup = np.zeros(
+        (len(pregen_delta_range), len(pregen_tau_range), len(pregen_alpha_range), time_steps_for_fmri.size)
+    )
     tstart = time.time()
     for i, delta in enumerate(pregen_delta_range):
         tend = time.time()
@@ -340,21 +354,19 @@ def plot_eeg_hdr_across_delta_tau_alpha_range(eeg: EEGData, hdr_window: float, t
                   f'Last tau/alpha search took {tend - tstart:.2f} seconds')
         elif verbose:
             print(f'Pregenerating eeg responses.\nDelta: {delta:.4f} ({i / len(delta_range) * 100:.2f}%).')
-        for tau in pregen_tau_range:
-            for alpha in pregen_alpha_range:
+        for j, tau in enumerate(pregen_tau_range):
+            for k, alpha in enumerate(pregen_alpha_range):
                 hrf = get_est_hemodynamic_response(time_steps, delta, tau, alpha)
                 hdr_for_eeg = get_hdr_for_eeg(eeg.data, hrf)
                 fmri_hdr_for_eeg = downsample_hdr_for_eeg(r_fmri, hdr_for_eeg)
-                fmri_hdr_lookup[(delta, tau, alpha)] = fmri_hdr_for_eeg
+                fmri_hdr_lookup[i, j, k, :] = fmri_hdr_for_eeg
 
-    if verbose:
-        print(pregen_delta_range)
-        print(delta_range)
-        print(pregen_tau_range)
-        print(tau_range)
-        print(pregen_alpha_range)
-        print(tau)
-        print(fmri_hdr_lookup.keys())
+    def lookup_by_value(delta_value, tau_value, alpha_value):
+        i_val = np.where(pregen_delta_range == delta_value)[0][0]
+        j_val = np.where(pregen_tau_range == tau_value)[0][0]
+        k_val = np.where(pregen_alpha_range == alpha_value)[0][0]
+        return fmri_hdr_lookup[i_val, j_val, k_val, :]
+
     x_start = 25
     x_length = 10
     try:
@@ -369,7 +381,7 @@ def plot_eeg_hdr_across_delta_tau_alpha_range(eeg: EEGData, hdr_window: float, t
             'alpha', sparse_alpha_range,
             'tau', sparse_tau_range,
             'delta', delta_range,
-            fmri_hdr_lookup,
+            lookup_by_value,
             time_steps_for_fmri,
             x_start,
             x_length
@@ -377,7 +389,7 @@ def plot_eeg_hdr_across_delta_tau_alpha_range(eeg: EEGData, hdr_window: float, t
             'delta', sparse_delta_range,
             'alpha', sparse_alpha_range,
             'tau', tau_range,
-            fmri_hdr_lookup,
+            lookup_by_value,
             time_steps_for_fmri,
             x_start,
             x_length
@@ -385,7 +397,7 @@ def plot_eeg_hdr_across_delta_tau_alpha_range(eeg: EEGData, hdr_window: float, t
             'delta', sparse_delta_range,
             'tau', sparse_tau_range,
             'alpha', alpha_range,
-            fmri_hdr_lookup,
+            lookup_by_value,
             time_steps_for_fmri,
             x_start,
             x_length
