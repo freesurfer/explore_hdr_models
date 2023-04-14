@@ -1,9 +1,8 @@
-from datetime import datetime
-
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 import scipy
+import time
 import warnings
 
 from collections import defaultdict
@@ -333,9 +332,9 @@ def plot_eeg_hdr_across_delta_tau_alpha_range(eeg: EEGData, hdr_window: float, t
     pregen_delta_range = delta_range if PLOT_DELTA in delta_range else np.concatenate([delta_range, np.array([PLOT_DELTA])])
     pregen_tau_range = tau_range if PLOT_TAU in tau_range else np.concatenate([tau_range, np.array([PLOT_TAU])])
     pregen_alpha_range = alpha_range if PLOT_ALPHA in alpha_range else np.concatenate([alpha_range, np.array([PLOT_ALPHA])])
-    tstart = datetime.now()
+    tstart = time.time()
     for i, delta in enumerate(pregen_delta_range):
-        tend = datetime.now()
+        tend = time.time()
         if verbose and i > 0:
             print(f'Delta: {delta:.5f} ({i / len(delta_range) * 100:.2f}%). '
                   f'Last tau/alpha search took {tend - tstart:.2f} seconds')
