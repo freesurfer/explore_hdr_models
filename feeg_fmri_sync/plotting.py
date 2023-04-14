@@ -328,7 +328,7 @@ def plot_eeg_hdrs_across_range(
 
 def plot_eeg_hdr_across_delta_tau_alpha_range(eeg: EEGData, hdr_window: float, tr: float,
                                               delta_range: npt.ArrayLike, tau_range: npt.ArrayLike,
-                                              alpha_range: npt.ArrayLike, verbose: bool = True) -> List[plt.Figure]:
+                                              alpha_range: npt.ArrayLike) -> List[plt.Figure]:
     delta_range = np.round(delta_range, 4)
     tau_range = np.round(tau_range, 4)
     alpha_range = np.round(alpha_range, 4)
@@ -340,37 +340,16 @@ def plot_eeg_hdr_across_delta_tau_alpha_range(eeg: EEGData, hdr_window: float, t
     time_steps_for_eeg = np.arange(len(eeg.data)) / eeg.sample_frequency
     time_steps_for_fmri = time_steps_for_eeg[::r_fmri]
 
-    pregen_delta_range = delta_range if PLOT_DELTA in delta_range else np.concatenate([delta_range, [PLOT_DELTA]])
-    pregen_tau_range = tau_range if PLOT_TAU in tau_range else np.concatenate([tau_range, [PLOT_TAU]])
-    pregen_alpha_range = alpha_range if PLOT_ALPHA in alpha_range else np.concatenate([alpha_range, [PLOT_ALPHA]])
-    fmri_hdr_lookup = np.zeros(
-        (len(pregen_delta_range), len(pregen_tau_range), len(pregen_alpha_range), time_steps_for_fmri.size)
-    )
-    tstart = time.time()
-    for i, delta in enumerate(pregen_delta_range):
-        tend = time.time()
-        if verbose and i > 0:
-            print(f'Delta: {delta:.5f} ({i / len(delta_range) * 100:.2f}%). '
-                  f'Last tau/alpha search took {tend - tstart:.2f} seconds')
-        elif verbose:
-            print(f'Pregenerating eeg responses.\nDelta: {delta:.4f} ({i / len(delta_range) * 100:.2f}%).')
-        for j, tau in enumerate(pregen_tau_range):
-            for k, alpha in enumerate(pregen_alpha_range):
-                hrf = get_est_hemodynamic_response(time_steps, delta, tau, alpha)
-                hdr_for_eeg = get_hdr_for_eeg(eeg.data, hrf)
-                fmri_hdr_for_eeg = downsample_hdr_for_eeg(r_fmri, hdr_for_eeg)
-                fmri_hdr_lookup[i, j, k, :] = fmri_hdr_for_eeg
-
     def lookup_by_value(delta_value, tau_value, alpha_value):
-        i_val = np.where(pregen_delta_range == delta_value)[0][0]
-        j_val = np.where(pregen_tau_range == tau_value)[0][0]
-        k_val = np.where(pregen_alpha_range == alpha_value)[0][0]
-        return fmri_hdr_lookup[i_val, j_val, k_val, :]
+        hrf = get_est_hemodynamic_response(time_steps, delta_value, tau_value, alpha_value)
+        hdr_for_eeg = get_hdr_for_eeg(eeg.data, hrf)
+        return downsample_hdr_for_eeg(r_fmri, hdr_for_eeg)
 
+    base_lookup = lookup_by_value(PLOT_DELTA, PLOT_TAU, PLOT_ALPHA)
     x_start = 25
     x_length = 10
     try:
-        while np.isnan(eeg.data[x_start]):
+        while np.isnan(base_lookup[x_start]):
             x_start += x_length
     except IndexError:
         raise ValueError('Cannot find a section without NANs in eeg data')
@@ -408,12 +387,12 @@ def plot_eeg_hdr_across_delta_tau_alpha_range(eeg: EEGData, hdr_window: float, t
 def display_plot(plot_fn: Callable, *args, **kwargs) -> None:
     plot_fn(*args, **kwargs)
     plt.show()
-    plt.close()
+    plt.close('all')
 
 
-def save_plot(save_to: str, plot_fn: Callable, *args, **kwargs):
+def save_plot(save_to: str, plot_fn: Callable, *args, **kwargs) -> None:
     figs = plot_fn(*args, **kwargs)
     with PdfPages(f'{save_to}.pdf') as pdf:
         for fig in figs:
             pdf.savefig(fig)
-    plt.close()
+    plt.close('all')
