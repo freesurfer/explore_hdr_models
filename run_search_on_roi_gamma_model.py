@@ -24,7 +24,8 @@ from feeg_fmri_sync import SEARCH_TYPES
 from feeg_fmri_sync.constants import PLOT_ALPHA, PLOT_DELTA, PLOT_TAU
 from feeg_fmri_sync.io import load_roi_from_mat
 from feeg_fmri_sync.models import EEGData, fMRIData
-from feeg_fmri_sync.plotting import plot_all_search_results_2d_on_diff_colormaps
+from feeg_fmri_sync.plotting import plot_all_search_results_2d_on_diff_colormaps, \
+    plot_eeg_hdr_across_delta_tau_alpha_range, save_eeg_hdr_across_delta_tau_alpha_range, save_plot
 from feeg_fmri_sync.search import search_voxels
 
 
@@ -62,8 +63,6 @@ parser.add_argument('--alpha-step', type=float, default=0.05)
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    eeg_name = os.path.basename(args.par_file).split('.')[0]
-
     # Load eeg data
     eeg_data = np.fromfile(args.par_file, sep='\n')
     eeg = EEGData(eeg_data, args.eeg_sample_frequency)
@@ -74,9 +73,13 @@ if __name__ == '__main__':
     if not os.path.exists(args.out_dir):
         os.makedirs(args.out_dir)
 
+    delta_range = np.arange(args.delta_start, args.delta_end + args.delta_step, step=args.delta_step)
+    tau_range = np.arange(args.tau_start, args.tau_end + args.tau_step, step=args.tau_step)
+    alpha_range = np.arange(args.alpha_start, args.alpha_end + args.alpha_step, step=args.alpha_step)
+
     models = {}
     for search_type in args.search_type:
-        models[f'{search_type}_{eeg_name}'] = SEARCH_TYPES[search_type]['model'](
+        models[f'{search_type}_{args.out_name}'] = SEARCH_TYPES[search_type]['model'](
             eeg,
             fMRIData(fmri_voxel_data, args.tr, fmri_voxel_names),
             args.out_name,
@@ -93,12 +96,18 @@ if __name__ == '__main__':
             display_plot=False,
             save_plot_dir=args.out_dir
         )
-        model_for_plotting.set_plot_voxels(fmri_voxel_names) 
+        save_plot(
+            os.path.join(args.out_dir, f'{args.out_name}_across_search_space'),
+            plot_eeg_hdr_across_delta_tau_alpha_range,
+            eeg,
+            args.hdr_window,
+            args.tr,
+            delta_range,
+            tau_range,
+            alpha_range,
+        )
+        model_for_plotting.set_plot_voxels(fmri_voxel_names)
         model_for_plotting.score(PLOT_DELTA, PLOT_TAU, PLOT_ALPHA)
-
-    delta_range = np.arange(args.delta_start, args.delta_end + args.delta_step, step=args.delta_step)
-    tau_range = np.arange(args.tau_start, args.tau_end + args.tau_step, step=args.tau_step)
-    alpha_range = np.arange(args.alpha_start, args.alpha_end + args.alpha_step, step=args.alpha_step)
 
     descriptions, df = search_voxels(models, delta_range, tau_range, alpha_range, args.verbose)
 
@@ -107,8 +116,14 @@ if __name__ == '__main__':
         df_to_plot = df[df['model_name'] == model_name].drop(columns='model_name').astype(float)
         if args.verbose:
             print(f'Plotting search results...')
-        plot_all_search_results_2d_on_diff_colormaps(df_to_plot, save_path=os.path.join(args.out_dir, f'{model_name}_cost_heat_map'))
-        out_name = f'{model_name}_search_summary_on_{os.path.basename(args.mat_file).split(".")[0]}_sub{args.sub_and_run_i}.csv'
+        save_plot(
+            os.path.join(args.out_dir, f'{model_name}_cost_heat_map'),
+            plot_all_search_results_2d_on_diff_colormaps,
+            df_to_plot,
+            verbose=False,
+        )
+        out_name = f'{model_name}_search_summary_on_' \
+                   f'{os.path.basename(args.mat_file).split(".")[0]}_sub{args.sub_and_run_i}.csv'
         if args.verbose:
             print(f'Writing search summary to {out_name}')
         with open(os.path.join(args.out_dir, out_name), 'w') as f:
