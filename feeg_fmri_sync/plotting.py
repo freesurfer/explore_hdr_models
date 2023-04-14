@@ -1,3 +1,5 @@
+from datetime import time
+
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -317,7 +319,10 @@ def plot_eeg_hdrs_across_range(
 
 def plot_eeg_hdr_across_delta_tau_alpha_range(eeg: EEGData, hdr_window: float, tr: float,
                                               delta_range: npt.ArrayLike, tau_range: npt.ArrayLike,
-                                              alpha_range: npt.ArrayLike) -> List[plt.Figure]:
+                                              alpha_range: npt.ArrayLike, verbose: bool = True) -> List[plt.Figure]:
+    delta_range = np.round(delta_range, 4)
+    tau_range = np.round(tau_range, 4)
+    alpha_range = np.round(alpha_range, 4)
     sparse_delta_range = [delta_range[0], PLOT_DELTA, delta_range[-1]]
     sparse_tau_range = [tau_range[0], PLOT_TAU, tau_range[-1]]
     sparse_alpha_range = [alpha_range[0], PLOT_ALPHA, alpha_range[-1]]
@@ -329,7 +334,14 @@ def plot_eeg_hdr_across_delta_tau_alpha_range(eeg: EEGData, hdr_window: float, t
     pregen_delta_range = delta_range if PLOT_DELTA in delta_range else np.concatenate([delta_range, np.array([PLOT_DELTA])])
     pregen_tau_range = tau_range if PLOT_TAU in tau_range else np.concatenate([tau_range, np.array([PLOT_TAU])])
     pregen_alpha_range = alpha_range if PLOT_ALPHA in alpha_range else np.concatenate([alpha_range, np.array([PLOT_ALPHA])])
-    for delta in pregen_delta_range:
+    tstart = time.time()
+    for i, delta in enumerate(pregen_delta_range):
+        tend = time.time()
+        if verbose and i > 0:
+            print(f'Delta: {delta:.5f} ({i / len(delta_range) * 100:.2f}%). '
+                  f'Last tau/alpha search took {tend - tstart:.2f} seconds')
+        elif verbose:
+            print(f'Pregenerating eeg responses.\nDelta: {delta:.4f} ({i / len(delta_range) * 100:.2f}%).')
         for tau in pregen_tau_range:
             for alpha in pregen_alpha_range:
                 hrf = get_est_hemodynamic_response(time_steps, delta, tau, alpha)
