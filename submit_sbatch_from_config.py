@@ -127,4 +127,16 @@ if __name__ == '__main__':
     if not args.only_files:
         processes = []
         for job_name, sbatch_script in sbatch_job_name_to_out_files.items():
-            processes.append(subprocess.check_call(['sbatch', f'--job-name={job_name}', sbatch_script]))
+            processes.append(
+                subprocess.run(['sbatch', f'--job-name={job_name}', sbatch_script], capture_output=True, check=True)
+            )
+        submitted_jobs = []
+        for process in processes:
+            print(process.stdout)
+            job_id_match = re.search(r'([0-9]+)', process.stdout)
+            if job_id_match:
+                submitted_jobs.append(f'{job_id_match.group(1)}\n')
+
+        with open(os.path.join(root_dir, sbatch_out_dir, 'submitted_jobs.txt', 'w')) as f:
+            f.writelines(submitted_jobs)
+
