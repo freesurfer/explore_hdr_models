@@ -9,7 +9,8 @@ import re
 import subprocess
 from typing import Dict
 
-from submission.parse_config import get_root, get_config_subsection_variable, get_config_section
+from submission.parse_config import get_root, get_config_subsection_variable, get_config_section, \
+    get_values_for_section_ignoring_defaults
 from submission.search_script_writer import (
     get_fmri_files_creator,
     SearchScriptWriter,
@@ -52,8 +53,7 @@ if __name__ == '__main__':
     # Get directory with networks for EEG par files
     network_dir = get_config_subsection_variable(config, 'network-dir', 'DEFAULT')
     # Get list of networks if specified
-    print(get_config_section(config, 'networks'))
-    networks = [network_name for network_name in get_config_section(config, 'networks').values()]
+    networks = [network_name for network_name in get_values_for_section_ignoring_defaults(config, 'networks')]
     # By default, get all networks
     if not networks:
         networks = []
@@ -63,9 +63,9 @@ if __name__ == '__main__':
 
     for network in networks:
         # Get list of subjects if specified
-        subjects = [subject_name for subject_name in get_config_section(config, 'subjects').values()]
+        subjects = [subject_name for subject_name in get_values_for_section_ignoring_defaults(config, 'subjects')]
         # Get list of runs if specified
-        runs = [run_name for run_name in get_config_section(config, 'runs').values()]
+        runs = [run_name for run_name in get_values_for_section_ignoring_defaults(config, 'runs')]
         # Get list of all subjects (in case we're doing roi analysis)
         all_subjects_and_runs_list = []
         subject_names_list = []
