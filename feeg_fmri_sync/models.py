@@ -115,9 +115,6 @@ class CanonicalHemodynamicModel:
             if self.est_fmri_n_trs and self.est_fmri_n_trs != est_fmri.get_n_trs():
                 print(f'WARNING: estimated fMRI size changed! {self.est_fmri_n_trs} -> {est_fmri.get_n_trs()}')
             tr_axis = self.fmri.get_tr_axis()
-            print(f'Est FMRI shape: {est_fmri.data.shape}')
-            print(f'Actual FMRI data shape: {self.fmri.data.shape}')
-            print(f'TR axis: {tr_axis}')
             actual_fmri_compression_mask = np.arange(self.fmri.data.shape[tr_axis]) >= self.n_tr_skip_beg
             self.est_fmri_n_trs = est_fmri.get_n_trs()
             self.transform_est_fmri = lambda x: x
