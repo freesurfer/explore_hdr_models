@@ -1,5 +1,5 @@
 from configparser import ConfigParser, SectionProxy
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 
 def get_config_subsection_variable(config: ConfigParser, varname: str, section: Optional[str] = None) -> str:
@@ -18,14 +18,17 @@ def get_config_section(config: ConfigParser, section: str) -> SectionProxy:
 
 
 def get_values_for_section_ignoring_defaults(config: ConfigParser, section: str) -> List[str]:
+    return [value for _, value in get_items_for_section_ignoring_defaults(config, section)]
+
+
+def get_items_for_section_ignoring_defaults(config: ConfigParser, section: str) -> List[Tuple[str, str]]:
     retlist = []
     defaults = config.defaults()
     for key, value in get_config_section(config, section).items():
         if key in defaults:
             continue
-        retlist.append(value)
+        retlist.append((key, value))
     return retlist
-
 
 def get_root(config: ConfigParser, location: Optional[str]) -> str:
     if location:

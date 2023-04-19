@@ -6,7 +6,7 @@ from configparser import ConfigParser
 from typing import List, Dict, Generator, Optional, Type, TypeVar
 
 from submission.parse_config import get_config_section, get_config_subsection_variable, \
-    get_values_for_section_ignoring_defaults
+    get_values_for_section_ignoring_defaults, get_items_for_section_ignoring_defaults
 from submission.script_writers import ScriptWriter, IterativeScriptWriter
 from feeg_fmri_sync.utils import get_fmri_filepaths, get_i_for_subj_and_run
 
@@ -81,19 +81,19 @@ class GammaCanonicalHDR(HDRSearch):
     lookup_str = f'modeling-type.{type_str}'
 
     def __init__(self, config):
-        self.search_variables = get_config_section(config, self.lookup_str)
+        self.search_variables = get_items_for_section_ignoring_defaults(config, self.lookup_str)
         self.search_types = get_values_for_section_ignoring_defaults(config, f'{self.lookup_str}.search-type')
 
     def get_lines(self) -> List[str]:
         lines = [f'--search-type={search_type}' for search_type in self.search_types]
-        for varname, variable in self.search_variables.items():
+        for varname, variable in self.search_variables:
             lines.append(f'--{varname}={variable}')
         return lines
 
 
 class NiiFMRIFiles(FMRIFiles):
     type_str = 'nii'
-    script_path = str(pathlib.Path(__file__).with_name('run_search_on_nii_gamma_model.py').resolve())
+    script_path = str(pathlib.Path(__file__).parent.with_name('run_search_on_nii_gamma_model.py').resolve())
     # TODO: decide about job-number and number-of-tasks
 
     def __init__(self, config: ConfigParser, subject: str, run: int, root_dir: str, **kwargs):
@@ -116,7 +116,7 @@ class NiiFMRIFiles(FMRIFiles):
 
 class RoiFile(FMRIFiles):
     type_str = 'roi'
-    script_path = str(pathlib.Path(__file__).with_name('run_search_on_roi_gamma_model.py').resolve())
+    script_path = str(pathlib.Path(__file__).parent.with_name('run_search_on_roi_gamma_model.py').resolve())
 
     def __init__(self, config: ConfigParser, subject: str, run: int, root_dir: str,
                  all_subjects_list: List[str], **kwargs):
