@@ -1,8 +1,8 @@
 from typing import List, Generator
 
-from feeg_fmri_sync.submission.script_writers import ScriptWriter
-from feeg_fmri_sync.submission.search_script_writer import SearchScriptWriter
-from feeg_fmri_sync.submission.parse_config import get_config_section
+from submission.script_writers import ScriptWriter
+from submission.search_script_writer import SearchScriptWriter
+from submission.parse_config import get_config_section
 
 
 class SBatchWriter(ScriptWriter):
@@ -41,7 +41,7 @@ class WriteSubmissionSh:
             '# <<< conda initialize <<<'
         ]
 
-    def get_identifiers(self) -> Generator[int]:
+    def get_identifiers(self) -> Generator[int, None, None]:
         yield self.script_setup.get_identifiers()
 
     def write_file(self, identifier: int, out_name: str) -> str:

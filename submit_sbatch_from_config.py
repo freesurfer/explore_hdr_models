@@ -9,13 +9,13 @@ import re
 import subprocess
 from typing import Dict
 
-from feeg_fmri_sync.submission.parse_config import get_root, get_config_subsection_variable, get_config_section
-from feeg_fmri_sync.submission.search_script_writer import HDRSearch, get_fmri_files_creator, SearchScriptWriter
-from feeg_fmri_sync.submission.sbatch_script_writer import SBatchWriter, WriteSubmissionSh
+from submission.parse_config import get_root, get_config_subsection_variable, get_config_section
+from submission.search_script_writer import HDRSearch, get_fmri_files_creator, SearchScriptWriter
+from submission.sbatch_script_writer import SBatchWriter, WriteSubmissionSh
 
 
 parser = argparse.ArgumentParser(
-    description='Wrapper command to submit a sbatch job . **Assumes EEG and fMRI data exist for the same subjects**'
+    description='Wrapper command to submit a sbatch job. **ASSUMES EEG and fMRI data EXIST for the SAME SUBJECTS**'
 )
 parser.add_argument('config', help=f'Configuration file to read parameters')
 parser.add_argument('--location', default=None, help=f'Location section to pull root directory from')

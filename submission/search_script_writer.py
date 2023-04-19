@@ -1,20 +1,20 @@
 import os
 import pathlib
 import re
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, ABCMeta
 from configparser import ConfigParser
 from typing import List, Dict, Generator, Optional, Type
 
-from feeg_fmri_sync.submission.parse_config import get_config_section, get_config_subsection_variable
-from feeg_fmri_sync.submission.script_writers import ScriptWriter, IterativeScriptWriter
+from submission.parse_config import get_config_section, get_config_subsection_variable
+from submission.script_writers import ScriptWriter, IterativeScriptWriter
 from feeg_fmri_sync.utils import get_fmri_filepaths, get_i_for_subj_and_run
 
 
-class HDRSearch(ABC, ScriptWriter):
+class HDRSearch(ScriptWriter, metaclass=ABCMeta):
     lookup_str: str
 
 
-class FMRIFiles(ABC, IterativeScriptWriter):
+class FMRIFiles(IterativeScriptWriter, metaclass=ABCMeta):
     type_str: str
     script_path: str
     variables: Dict[str, str]
@@ -66,7 +66,7 @@ class SearchScriptWriter(IterativeScriptWriter):
         lines.append(f'--out-name={out_name}')
         return lines
 
-    def get_identifiers(self) -> Generator[int]:
+    def get_identifiers(self) -> Generator[int, None, None]:
         yield self.fmri_files.get_identifiers()
 
 
@@ -97,7 +97,7 @@ class NiiFMRIFiles(FMRIFiles):
         self.fmri_filenames = get_fmri_filepaths(os.path.join(root_dir, fmri_dir), subject, hemispheres, run)
         self.out_name = f'{subject}_r{run}'
 
-    def get_identifiers(self) -> Generator[int]:
+    def get_identifiers(self) -> Generator[int, None, None]:
         for i in range(len(self.fmri_filenames)):
             yield i
 
@@ -121,7 +121,7 @@ class RoiFile(FMRIFiles):
         self.subj_and_run_i = get_i_for_subj_and_run(subject, str(run), all_subjects_list)
         self.out_name = f'{subject}_r{run}'
 
-    def get_identifiers(self) -> Generator[int]:
+    def get_identifiers(self) -> Generator[int, None, None]:
         yield 0
 
     def get_lines(self, ind):

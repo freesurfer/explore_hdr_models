@@ -14,5 +14,5 @@ class IterativeScriptWriter(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_identifiers(self) -> Generator[int]:
+    def get_identifiers(self) -> Generator[int, None, None]:
         raise NotImplementedError()
