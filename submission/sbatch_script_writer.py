@@ -29,13 +29,13 @@ class WriteSubmissionSh:
             '# >>> conda initialize >>>',
             '__conda_setup="$(\'/usr/pubsw/packages/python/anaconda3-2019.03/bin/conda\' \'shell.bash\' \'hook\' 2> '
             '/dev/null)"',
-            'if [ $? -eq 0]; then',
+            'if [ $? -eq 0 ]; then',
             '\teval "$__conda_setup"',
             'else',
-            '\tif [-f "/usr/pubsw/packages/python/anaconda3-2019.03/etc/profile.d/conda.sh"]; then',
+            '\tif [ -f "/usr/pubsw/packages/python/anaconda3-2019.03/etc/profile.d/conda.sh" ]; then',
             '\t\t. "/usr/pubsw/packages/python/anaconda3-2019.03/etc/profile.d/conda.sh"'
             '\telse',
-            '\t\texport PATH = "/usr/pubsw/packages/python/anaconda3-2019.03/bin:$PATH"',
+            '\t\texport PATH="/usr/pubsw/packages/python/anaconda3-2019.03/bin:$PATH"',
             '\tfi',
             'fi',
             'unset __conda_setup',
