@@ -9,8 +9,11 @@ import re
 import subprocess
 from typing import Dict
 
-from submission.parse_config import get_root, get_config_subsection_variable, get_config_section, \
-    get_values_for_section_ignoring_defaults
+from submission.parse_config import (
+    get_root,
+    get_config_subsection_variable,
+    get_values_for_section_ignoring_defaults,
+)
 from submission.search_script_writer import (
     get_fmri_files_creator,
     SearchScriptWriter,

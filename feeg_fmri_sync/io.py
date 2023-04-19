@@ -1,12 +1,10 @@
 import math
-import scipy
+from typing import Optional, Tuple
 
 import numpy as np
 import numpy.typing as npt
+import scipy
 import surfa as sf
-
-
-from typing import List, Optional, Tuple
 
 
 def load_from_nii(

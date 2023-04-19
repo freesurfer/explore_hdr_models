@@ -1,19 +1,18 @@
-import matplotlib.pyplot as plt
 import numpy as np
 
 from feeg_fmri_sync.plotting import plot_hdr_for_eeg
 from feeg_fmri_sync.utils import (
     downsample_hdr_for_eeg,
-    get_est_hemodynamic_response, 
-    get_hdr_for_eeg, 
+    get_est_hemodynamic_response,
+    get_hdr_for_eeg,
     get_ratio_eeg_freq_to_fmri_freq,
 )
+from tests.data.hdr import HDR
 from tests.helpers import (
     load_expected_downsampled_hdr_for_eeg,
     load_expected_hdr_for_eeg,
     load_test_eeg_without_nans,
 )
-from tests.data.hdr import HDR
 
 PLOT = True
 
@@ -33,24 +32,34 @@ class TestGetEstHemodynamicResponse:
         est_hemodynamic_response = get_est_hemodynamic_response(
             self.time_steps, delta=delta, tau=self.tau, alpha=self.alpha
         )
-        assert est_hemodynamic_response.size == self.time_steps.size, f'est_hemodynamic_response returns an array with a different shape {est_hemodynamic_response.size} than input time steps {self.time_steps.size}'
-        assert np.count_nonzero(est_hemodynamic_response) == 0, f'est_hemodynamic_response: ({est_hemodynamic_response}) should be all zeros if delta ({delta}) > max(time_steps) ({np.max(self.time_steps)})'
+        assert est_hemodynamic_response.size == self.time_steps.size, f'est_hemodynamic_response returns an array ' \
+                                                                      f'with a different' \
+                                                                      f' shape {est_hemodynamic_response.size} than ' \
+                                                                      f'input time steps {self.time_steps.size}'
+        assert np.count_nonzero(est_hemodynamic_response) == 0, f'est_hemodynamic_response: ' \
+                                                                f'({est_hemodynamic_response}) should be all zeros ' \
+                                                                f'if delta ({delta}) > max(time_steps) ' \
+                                                                f'({np.max(self.time_steps)})'
 
     def test_non_zero_defaults(self):
         hdr = get_est_hemodynamic_response(
             self.time_steps, delta=self.delta, tau=self.tau, alpha=self.alpha
         )
         expected_hdr = np.array([0, 0, 0, 0, 0, 0.0605, 0.3650, 0.6796])
-        assert hdr.size == self.time_steps.size, f'est_hemodynamic_response returns an array with a different shape {hdr.size} than input time steps {self.time_steps.size}'
-        assert np.allclose(hdr, expected_hdr, rtol=0.001, atol=0.001), f'est_hemodynamic_response: ({hdr}) should be equal to {expected_hdr}'
+        assert hdr.size == self.time_steps.size, f'est_hemodynamic_response returns an array with a different shape ' \
+                                                 f'{hdr.size} than input time steps {self.time_steps.size}'
+        assert np.allclose(hdr, expected_hdr, rtol=0.001, atol=0.001), f'est_hemodynamic_response: ({hdr}) should be ' \
+                                                                       f'equal to {expected_hdr}'
 
     def test_non_zero_odd_alpha(self):
         hdr = get_est_hemodynamic_response(
             self.time_steps, delta=self.delta, tau=self.tau, alpha=3
         )
         expected_hdr = np.array([0, 0, 0, 0, 0, 0.0049, 0.0882, 0.2737])
-        assert hdr.size == self.time_steps.size, f'est_hemodynamic_response returns an array with a different shape {hdr.size} than input time steps {self.time_steps.size}'
-        assert np.allclose(hdr, expected_hdr, rtol=0.001, atol=0.001), f'est_hemodynamic_response: ({hdr}) should be equal to {expected_hdr}'
+        assert hdr.size == self.time_steps.size, f'est_hemodynamic_response returns an array with a different shape ' \
+                                                 f'{hdr.size} than input time steps {self.time_steps.size}'
+        assert np.allclose(hdr, expected_hdr, rtol=0.001, atol=0.001), f'est_hemodynamic_response: ({hdr}) should be ' \
+                                                                       f'equal to {expected_hdr}'
 
 
 def test_get_hdr_for_eeg():

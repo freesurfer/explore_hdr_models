@@ -82,8 +82,7 @@ class GammaCanonicalHDR(HDRSearch):
 
     def __init__(self, config):
         self.search_variables = get_config_section(config, self.lookup_str)
-        search_types = get_values_for_section_ignoring_defaults(config, f'{self.lookup_str}.search-type')
-        self.search_types = [search_type for search_type in search_types.items()]
+        self.search_types = get_values_for_section_ignoring_defaults(config, f'{self.lookup_str}.search-type')
 
     def get_lines(self) -> List[str]:
         lines = [f'--search-type={search_type}' for search_type in self.search_types]

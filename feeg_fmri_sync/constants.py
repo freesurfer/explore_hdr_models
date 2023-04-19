@@ -56,7 +56,8 @@ class fMRIData:
     def is_single_voxel(self) -> bool:
         return len(self.data.shape) < 2
 
-    def get_voxel_axis(self) -> int:
+    @staticmethod
+    def get_voxel_axis() -> int:
         return 0
 
     def get_tr_axis(self) -> int:
