@@ -1,15 +1,12 @@
-import matplotlib.pyplot as plt
 import numpy as np
-import numpy.typing as npt
+
 import pandas as pd
 import time
-import warnings
 
-from typing import Dict, Any, List, Type, Optional
+from typing import Dict, List, Type, Optional
 
 from feeg_fmri_sync import VectorizedHemodynamicModel
 from feeg_fmri_sync.constants import EEGData, fMRIData
-from feeg_fmri_sync.models import HemodynamicModel
 from feeg_fmri_sync.simulations import ModelToFMRI, generate_eeg_data
 
 
@@ -46,7 +43,7 @@ def build_models(
                 name=name,
                 n_tr_skip_beg=n_trs_skipped_at_beginning,
                 hemodynamic_response_window=hemodynamic_response_window,
-                plot=plot
+                display_plot=plot
             )
             models[name].set_plot_voxels(model_to_fmri[hemodynamic_model]['fmri_to_plot'])
     return models
@@ -60,7 +57,8 @@ def search_voxels(models, delta_range, tau_range, alpha_range, verbose=True):
     for model_name, model in models.items():
         voxel_names = [name for name in model.fmri.voxel_names]
         if all_voxel_names != voxel_names:
-            raise ValueError(f"All models must share voxel names in the same order to search together. {model_name} has different values from {model_names[0]}")
+            raise ValueError(f"All models must share voxel names in the same order to search together. {model_name} "
+                             f"has different values from {model_names[0]}")
     if len(models) > 1:
         model_names = model_names.reshape((len(models), 1))
     tstart = time.time()
@@ -77,12 +75,12 @@ def search_voxels(models, delta_range, tau_range, alpha_range, verbose=True):
                 scores = []
                 for model in models.values():
                     scores.append(model.score(delta, tau, alpha))
-                vars = np.squeeze(np.ones((len(models), 3))*np.array([delta, tau, alpha]))
+                search_vars = np.squeeze(np.ones((len(models), 3))*np.array([delta, tau, alpha]))
                 scores = np.squeeze(np.array(scores))
                 if len(models) > 1:
-                    to_append = np.concatenate((vars, model_names, scores), axis=1)
+                    to_append = np.concatenate((search_vars, model_names, scores), axis=1)
                 else:
-                    to_append = np.concatenate((vars, model_names, scores))
+                    to_append = np.concatenate((search_vars, model_names, scores))
                 data.append(to_append)
                 
     data = np.vstack(data)
@@ -95,7 +93,7 @@ def search_voxels(models, delta_range, tau_range, alpha_range, verbose=True):
         vdata = df_voxels.to_numpy()
         var_indices, voxel_indices = np.nonzero(vdata == vdata.min(axis=0))
         min_for_each_voxel = df_for_model.iloc[var_indices, :][['delta', 'tau', 'alpha']].transpose()
-        min_for_each_voxel.columns = description.iloc[:,voxel_indices].columns
+        min_for_each_voxel.columns = description.iloc[:, voxel_indices].columns
         ret_desc = pd.concat((description, min_for_each_voxel))
         ret_desc.name = f'{model_name}'
         descriptions.append(ret_desc)    
