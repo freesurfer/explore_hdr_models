@@ -34,22 +34,22 @@ from feeg_fmri_sync.search import search_voxels
 
 parser = argparse.ArgumentParser()
 
-# EEG info
+# EEG file info
 parser.add_argument('--par-file', required=True, help=f'par file path')
-parser.add_argument('--eeg-sample-frequency', type=int, default=20)
-parser.add_argument('--num-trs-skipped-at-beginning', type=int, default=1)
 
-# fMRI info
+# fMRI file info
 parser.add_argument('--mat-file', required=True, help=f'ROI mat file path (must define X and subIndx as variables)')
 parser.add_argument('--sub-and-run-i', required=True, type=int, help='subIndx value in mat-file for eeg par file')
-parser.add_argument('--tr', type=int, default=800)
 
 # Output info
 parser.add_argument('-v', '--verbose', action='store_true')
 parser.add_argument('--out-dir', required=True, help=f'out file directory')
 parser.add_argument('--out-name', required=True, help=f'Name for model')
 
-# Search parameters
+# HDR Parameters
+parser.add_argument('--eeg-sample-frequency', type=int, default=20)
+parser.add_argument('--tr', type=int, default=800)
+parser.add_argument('--num-trs-skipped-at-beginning', type=int, default=1)
 parser.add_argument('--search-type', nargs='+', default=['classic_hemodynamic'], choices=SEARCH_TYPES.keys())
 parser.add_argument('--hdr-window', type=float, default=30)
 parser.add_argument('--delta-start', type=float, default=1)
