@@ -11,7 +11,7 @@ from feeg_fmri_sync.utils import (
     get_ratio_eeg_freq_to_fmri_freq,
     sum_hdr_for_eeg,
 )
-from feeg_fmri_sync.vectorized_models import VectorizedHemodynamicModel
+from feeg_fmri_sync.models import CanonicalHemodynamicModel
 
 from feeg_fmri_sync.plotting import compare_est_fmri_with_actual
 from tests.helpers import load_test_eeg_without_nans, load_test_eeg_with_nans
@@ -24,7 +24,7 @@ class ModelToFMRI(TypedDict):
 
 
 class ModelsToTest(TypedDict):
-    model: Type[VectorizedHemodynamicModel]
+    model: Type[CanonicalHemodynamicModel]
     name: str
     fmri_data_generator: Callable
 
@@ -107,7 +107,7 @@ def build_model_to_fmri(
         tr: float = 800,
         eeg_sample_freq: float = 20,
         hemodynamic_response_window: float = 30,
-        plot_generated_data: bool = False) -> Dict[Type[VectorizedHemodynamicModel], ModelToFMRI]:
+        plot_generated_data: bool = False) -> Dict[Type[CanonicalHemodynamicModel], ModelToFMRI]:
     """
     For each hemodynamic model class in models_to_test,
         For each eeg data spike train in eeg_data_options,

@@ -1,22 +1,18 @@
 import inspect
 
-from feeg_fmri_sync.models import (
-    HemodynamicModel,
-    SumEEGHemodynamicModel
-) 
 from feeg_fmri_sync.simulations import (
     generate_downsampled_simulated_fmri,
     generate_summed_simulated_fmri
 )
-from feeg_fmri_sync.vectorized_models import (
-    VectorizedHemodynamicModel,
+from feeg_fmri_sync.models import (
+    CanonicalHemodynamicModel,
     VectorizedSumEEGHemodynamicModel
 )
 
 
 SEARCH_TYPES = {
     'classic_hemodynamic': {
-        'model': VectorizedHemodynamicModel,
+        'model': CanonicalHemodynamicModel,
         'simulation_generator': generate_downsampled_simulated_fmri,
     },
     'classic_hemodynamic_sum': {

@@ -23,7 +23,7 @@ import pandas as pd
 from feeg_fmri_sync import SEARCH_TYPES
 from feeg_fmri_sync.constants import PLOT_ALPHA, PLOT_DELTA, PLOT_TAU
 from feeg_fmri_sync.io import load_roi_from_mat
-from feeg_fmri_sync.models import EEGData, fMRIData
+from feeg_fmri_sync.constants import EEGData, fMRIData
 from feeg_fmri_sync.plotting import (
     plot_all_search_results_2d_on_diff_colormaps,
     plot_eeg_hdr_across_delta_tau_alpha_range,

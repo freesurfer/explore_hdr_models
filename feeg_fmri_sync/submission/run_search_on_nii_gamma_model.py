@@ -19,7 +19,7 @@ import pandas as pd
 
 from feeg_fmri_sync import SEARCH_TYPES
 from feeg_fmri_sync.io import load_from_nii
-from feeg_fmri_sync.models import EEGData, fMRIData
+from feeg_fmri_sync.constants import EEGData, fMRIData
 from feeg_fmri_sync.search import search_voxels
 
 parser = argparse.ArgumentParser()

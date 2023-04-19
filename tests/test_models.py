@@ -1,7 +1,6 @@
-import math
 import numpy as np
 
-from feeg_fmri_sync.models import  HemodynamicModel, SumEEGHemodynamicModel
+from feeg_fmri_sync.models import CanonicalHemodynamicModel
 from feeg_fmri_sync.plotting import plot_hdr
 from tests.helpers import (
     load_expected_hdr,
@@ -12,10 +11,15 @@ from tests.helpers import (
 
 PLOT = False
 
+
 class TestHemodynamicResponseWithoutNans:
 
-    model = HemodynamicModel(eeg=load_test_eeg_without_nans(sample_frequency=20), fmri=load_simulated_raw_fmri(tr=800),
-                             name=, hemodynamic_response_window=30, display_plot=False)
+    model = CanonicalHemodynamicModel(
+        eeg=load_test_eeg_without_nans(sample_frequency=20),
+        fmri=load_simulated_raw_fmri(tr=800),
+        name='test_name',
+        hemodynamic_response_window=30,
+        display_plot=False)
     delta = 2.25
     tau = 1.25
     alpha = 2
@@ -38,5 +42,10 @@ class TestHemodynamicResponseWithoutNans:
 
 class TestHemodynamicResponseWithNans(TestHemodynamicResponseWithoutNans):
 
-    model = HemodynamicModel(eeg=load_test_eeg_with_nans(sample_frequency=20), fmri=load_simulated_raw_fmri(tr=800),
-                             name=, hemodynamic_response_window=30, display_plot=False)
+    model = CanonicalHemodynamicModel(
+        eeg=load_test_eeg_with_nans(sample_frequency=20),
+        fmri=load_simulated_raw_fmri(tr=800),
+        name='test_hdr',
+        hemodynamic_response_window=30,
+        display_plot=False
+    )

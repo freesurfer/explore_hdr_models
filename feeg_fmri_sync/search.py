@@ -5,7 +5,7 @@ import time
 
 from typing import Dict, List, Type, Optional
 
-from feeg_fmri_sync import VectorizedHemodynamicModel
+from feeg_fmri_sync import CanonicalHemodynamicModel
 from feeg_fmri_sync.constants import EEGData, fMRIData
 from feeg_fmri_sync.simulations import ModelToFMRI, generate_eeg_data
 
@@ -17,14 +17,14 @@ def get_suitable_range(start: int, end: int, num_points: int):
 
 
 def build_models(
-        model_to_fmri: Dict[Type[VectorizedHemodynamicModel], ModelToFMRI],
+        model_to_fmri: Dict[Type[CanonicalHemodynamicModel], ModelToFMRI],
         eeg_data_options: List[str],
         tr: float = 800,
         n_trs_skipped_at_beginning: int = 0,
         eeg_sample_freq: float = 20,
         hemodynamic_response_window: float = 30,
         plot: bool = False,
-        eeg_data_by_name: Optional[Dict[str, EEGData]] = None) -> Dict[str, VectorizedHemodynamicModel]:
+        eeg_data_by_name: Optional[Dict[str, EEGData]] = None) -> Dict[str, CanonicalHemodynamicModel]:
     """
     Build models used in search_voxels
     """

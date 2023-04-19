@@ -1,13 +1,14 @@
 import glob
 import math
-from typing import List
+import warnings
+from typing import List, Tuple
 
 import numpy as np
 import numpy.typing as npt
 import os
 import pandas as pd
 
-from feeg_fmri_sync.constants import PROJECT_DIR, FMRI_DIR
+from feeg_fmri_sync.constants import PROJECT_DIR, FMRI_DIR, fMRIData
 
 
 def get_i_for_subj_and_run(subj: str, run: str, subj_and_run_list: List[str]):
@@ -53,6 +54,35 @@ def get_est_hemodynamic_response(time_steps: npt.NDArray, delta: float, tau: flo
     peak = alpha ** alpha * math.exp(-alpha)
     hemodynamic_resp = hemodynamic_resp / peak
     return hemodynamic_resp
+
+
+def fit_glm(est_fmri: fMRIData, actual_fmri: fMRIData) -> Tuple[npt.NDArray, npt.NDArray, npt.NDArray, int]:
+    """
+    Fit this time course to raw fMRI to waveform with a GLM:
+        beta = inv(X'*X)*X'*fmri
+        yhat = X*beta
+        residual = fmri-yat
+        residual variance = std(residual)
+    Same effect as doing the correlation but residual variance is a cost we want to minimize
+    rather than a correlation to maximize
+    """
+    if not est_fmri.is_single_voxel():
+        warnings.warn(f'Estimated fMRI is multiple voxels. Model has not been tested')
+    x_nan = np.isnan(est_fmri.data)
+    x_drop_nans = np.extract(~x_nan, est_fmri.data)
+    y_nan = np.tile(x_nan, actual_fmri.get_n_voxels()).reshape(
+        (actual_fmri.get_n_voxels(), est_fmri.get_n_trs()))
+    # np.extract flattens the array
+    y_drop_nans_t = np.extract(~y_nan, actual_fmri.data).reshape(
+        (actual_fmri.get_n_voxels(), x_drop_nans.shape[0]))
+    # ones not necessary here
+    x_t = np.array([x_drop_nans, np.ones(x_drop_nans.shape[0])])
+    beta = np.matmul(np.matmul(np.linalg.inv(np.matmul(x_t, x_t.T)), x_t), y_drop_nans_t.T)
+    y_hat = np.matmul(x_t.T, beta)
+    residual = np.subtract(y_drop_nans_t.T, y_hat).T
+    degrees_of_freedom = x_t.shape[1] - x_t.shape[0]
+    residual_variance = np.sum(residual ** 2, axis=actual_fmri.get_tr_axis()) / degrees_of_freedom
+    return beta, residual, residual_variance, degrees_of_freedom
 
 
 def get_hdr_for_eeg(eeg_data: npt.NDArray, hdr: npt.NDArray) -> npt.NDArray:
