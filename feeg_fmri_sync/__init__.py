@@ -19,7 +19,7 @@ SEARCH_TYPES = {
         'model': VectorizedHemodynamicModel,
         'simulation_generator': generate_downsampled_simulated_fmri,
     },
-    'hemodynamic_sum_eeg': {
+    'classic_hemodynamic_sum': {
         'model': VectorizedSumEEGHemodynamicModel,
         'simulation_generator': generate_summed_simulated_fmri,
     },
