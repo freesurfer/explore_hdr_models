@@ -132,8 +132,9 @@ if __name__ == '__main__':
             )
         submitted_jobs = []
         for process in processes:
-            print(process.stdout)
-            job_id_match = re.search(r'([0-9]+)', process.stdout)
+            out = process.stdout.decode("utf8")
+            print(out)
+            job_id_match = re.search(r'([0-9]+)', out)
             if job_id_match:
                 submitted_jobs.append(f'{job_id_match.group(1)}\n')
 
