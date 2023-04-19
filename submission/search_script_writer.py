@@ -5,7 +5,8 @@ from abc import ABCMeta
 from configparser import ConfigParser
 from typing import List, Dict, Generator, Optional, Type, TypeVar
 
-from submission.parse_config import get_config_section, get_config_subsection_variable
+from submission.parse_config import get_config_section, get_config_subsection_variable, \
+    get_values_for_section_ignoring_defaults
 from submission.script_writers import ScriptWriter, IterativeScriptWriter
 from feeg_fmri_sync.utils import get_fmri_filepaths, get_i_for_subj_and_run
 
@@ -81,7 +82,7 @@ class GammaCanonicalHDR(HDRSearch):
 
     def __init__(self, config):
         self.search_variables = get_config_section(config, self.lookup_str)
-        search_types = get_config_section(config, f'{self.lookup_str}.search-type')
+        search_types = get_values_for_section_ignoring_defaults(config, f'{self.lookup_str}.search-type')
         self.search_types = [search_type for search_type in search_types.items()]
 
     def get_lines(self) -> List[str]:
