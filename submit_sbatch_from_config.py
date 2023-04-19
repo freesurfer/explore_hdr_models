@@ -52,6 +52,7 @@ if __name__ == '__main__':
     # Get directory with networks for EEG par files
     network_dir = get_config_subsection_variable(config, 'network-dir', 'DEFAULT')
     # Get list of networks if specified
+    print(get_config_section(config, 'networks'))
     networks = [network_name for network_name in get_config_section(config, 'networks').values()]
     # By default, get all networks
     if not networks:
