@@ -1,12 +1,11 @@
 import numpy as np
 import numpy.typing as npt
 
-from typing import Any, Dict, List, Optional, Tuple, TypedDict, Callable, Type
+from typing import Dict, List, Optional, TypedDict, Callable, Type
 
 from feeg_fmri_sync.constants import EEGData, fMRIData
 from feeg_fmri_sync.utils import (
     downsample_hdr_for_eeg,
-    generate_descriptions_from_search_df,
     get_est_hemodynamic_response,
     get_hdr_for_eeg, 
     get_ratio_eeg_freq_to_fmri_freq,
@@ -30,9 +29,15 @@ class ModelsToTest(TypedDict):
     fmri_data_generator: Callable
 
 
+def generate_random_eeg_data(n_timesteps: int = 11860, sample_frequency: Optional[float] = None) -> EEGData:
+    data = np.random.default_rng().choice([0, 1], size=n_timesteps, p=[0.7, 0.3])
+    return EEGData(data=data, sample_frequency=sample_frequency)
+
+
 EEG_DATA_OPTIONS: Dict[str, Callable] = {
     'without_nans': load_test_eeg_without_nans,
     'with_nans': load_test_eeg_with_nans,
+    'random': generate_random_eeg_data,
 }
 
 
