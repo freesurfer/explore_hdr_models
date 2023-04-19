@@ -124,7 +124,7 @@ class RoiFile(FMRIFiles):
             root_dir,
             get_config_subsection_variable(config, 'mat-file', section=f'fmri-input.{self.type_str}')
         )
-        self.subj_and_run_i = get_i_for_subj_and_run(subject, str(run), all_subjects_list)
+        self.subj_and_run_i = get_i_for_subj_and_run(subject, str(run), all_subjects_list) + 1
         self.out_name = f'{subject}_r{run}'
 
     def get_identifiers(self) -> Generator[int, None, None]:
