@@ -2,12 +2,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 import scipy
-import time
 import warnings
 
 from collections import defaultdict
 from matplotlib import cm
-from typing import Optional, Tuple, Dict, List, Callable
+from typing import Optional, Tuple, List, Callable
 
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -65,7 +64,9 @@ def compare_est_fmri_with_actual(
 
 
 def plot_all_search_results_2d(df, separate_by='alpha', save_path: Optional[str] = None):
-    """Assumes df was created with
+    """
+    Legacy!
+    Assumes df was created with
     for d in delta:
         for t in tau:
             for a in alpha:
@@ -113,7 +114,8 @@ def plot_all_search_results_2d(df, separate_by='alpha', save_path: Optional[str]
         plt.colorbar(cf, ax=axs.ravel().tolist())
         if not save_path:
             print(
-                f'Minimal Cost for {column} = {df[column].min()}; at\n{df[df[column] == df[column].min()][["delta", "tau", "alpha"]]}')
+                f'Minimal Cost for {column} = '
+                f'{df[column].min()}; at\n{df[df[column] == df[column].min()][["delta", "tau", "alpha"]]}')
             plt.show()
         else:
             plt.savefig(f'{save_path}_voxel{column}.pdf')
@@ -124,6 +126,67 @@ def generate_latex_label(text, add_dollars=True):
     if text in ['tau', 'alpha']:
         return f'{"$" if add_dollars else ""}\\{text}{"$" if add_dollars else ""}'
     return f'{"$" if add_dollars else ""}\{text}{"$" if add_dollars else ""}'
+
+
+def plot_all_search_results_2d_on_same_colormap(df, separate_by='alpha', verbose=True) -> List[plt.Figure]:
+    """
+    Assumes df was created with
+    for d in delta:
+        for t in tau:
+            for a in alpha:
+    And that all lists are ascending
+    """
+    df = df.astype(float)
+    dta = ['delta', 'tau', 'alpha']
+    if separate_by not in dta:
+        raise ValueError(f'separate_by ({separate_by}) must be in {dta}')
+    values_to_plot = df.columns[~np.isin(df.columns, dta)]
+
+    vmin = np.min(df[values_to_plot].min())
+    vmax = np.max(df[values_to_plot].max())
+
+    subfigure_separator = np.unique(df[separate_by])
+    n_subplot_rows, n_subplot_columns = get_subplot_axes(subfigure_separator)
+    dta.remove(separate_by)
+    x_label = dta[0]
+    y_label = dta[1]
+    figs = []
+    for column in values_to_plot:
+        fig, axs = plt.subplots(n_subplot_rows, n_subplot_columns)
+        fig.suptitle(column)
+        fig.tight_layout()
+        for i, d in enumerate(subfigure_separator):
+            if n_subplot_rows == n_subplot_columns == 1:
+                ax = axs
+            else:
+                ax = axs.flatten()[i]
+            ax.set_title(f'{generate_latex_label(separate_by)} = {d:.2f}')
+            if i / n_subplot_columns in range(n_subplot_rows):
+                ax.set_ylabel(generate_latex_label(y_label))
+            if i / n_subplot_columns == n_subplot_rows - 1:
+                ax.set_xlabel(generate_latex_label(x_label))
+            small_df = df[df[separate_by] == d]
+            x_length = len(np.unique(small_df[x_label]))
+            y_length = len(np.unique(small_df[y_label]))
+            if x_length != y_length:
+                warnings.warn(f'Code was not tested on data with different length {x_length} and {y_length}')
+            X = np.reshape(small_df[x_label].values, (x_length, y_length))
+            if not np.apply_along_axis(lambda x: np.isclose(x, x[0]).all(), 1, X).all():
+                raise ValueError('df violates order expectations. Plotting is not safe')
+            Y = np.reshape(small_df[y_label].values, (x_length, y_length))
+            if not np.isclose(Y, Y[0]).all():
+                raise ValueError('df violates order expectations. Plotting is not safe')
+            Z = np.reshape(small_df[column].values, (x_length, y_length))
+            cf = ax.contourf(X, Y, Z, cmap=cm.gist_earth, vmin=vmin, vmax=vmax)
+            ax.set_xlim([np.min(small_df[x_label]), np.max(small_df[x_label])])
+            ax.set_ylim([np.min(small_df[y_label]), np.max(small_df[y_label])])
+        plt.colorbar(cf, ax=axs.ravel().tolist())
+        figs.append(fig)
+        if verbose:
+            print(
+                f'Minimal Cost for {column} = '
+                f'{df[column].min()}; at\n{df[df[column] == df[column].min()][["delta", "tau", "alpha"]]}')
+    return figs
 
 
 def plot_all_search_results_2d_on_diff_colormaps(df, separate_by='alpha', verbose=True):
@@ -180,7 +243,8 @@ def plot_all_search_results_2d_on_diff_colormaps(df, separate_by='alpha', verbos
         figs.append(fig)
         if verbose:
             print(
-                f'Minimal Cost for {column} = {df[column].min()}; at\n{df[df[column] == df[column].min()][["delta", "tau", "alpha"]]}')
+                f'Minimal Cost for {column} = '
+                f'{df[column].min()}; at\n{df[df[column] == df[column].min()][["delta", "tau", "alpha"]]}')
     return figs
 
 
@@ -211,12 +275,12 @@ def plot_gradient_2d(grad: npt.NDArray,
         ax.set_title(f'{z_label} = {d:.2f}')
         ax.set_xlabel(f'{x_label}')
         ax.set_ylabel(f'{y_label}')
-        X = np.take(pts[x_index], i, axis=z_index)
-        Y = np.take(pts[y_index], i, axis=z_index)
+        x = np.take(pts[x_index], i, axis=z_index)
+        y = np.take(pts[y_index], i, axis=z_index)
         grad_at_z = np.take(grad, i, axis=z_index)
         cf = ax.contourf(
-            X,
-            Y,
+            x,
+            y,
             grad_at_z,
             cmap=cm.gist_earth,
             vmin=np.min(grad),
@@ -303,6 +367,8 @@ def plot_eeg_hdrs_across_range(
     fig, axs = plt.subplots(3, 3, sharex='all', sharey='all', figsize=(14, 8))
     fig.supxlabel(f'${generate_latex_label(x_label, add_dollars=False)} \longrightarrow$', fontsize=24)
     fig.supylabel(f'${generate_latex_label(y_label, add_dollars=False)} \longrightarrow$', fontsize=24)
+    y_min = np.inf
+    y_max = -np.inf
     for i, y in enumerate(reversed(y_range)):
         for j, x in enumerate(x_range):
             ax = axs[i][j]
@@ -316,11 +382,14 @@ def plot_eeg_hdrs_across_range(
                     label=f'${generate_latex_label(z_label, add_dollars=False)}={z:.2f}$',
                     linewidth=0.5,
                 )
+                y_min = np.min(np.concatenate([[y_min], fmri_hdr_for_eeg[x_start-1:x_start+x_length+2]]))
+                y_max = np.max(np.concatenate([[y_max], fmri_hdr_for_eeg[x_start-1:x_start+x_length+2]]))
             ax.set_xlim(x_start, x_start+x_length)
             if i == 2:
                 ax.set_xlabel('Time')
             if j == 0:
                 ax.set_ylabel('Expected fMRI signal')
+    axs[2][2].set_ylim(y_min - 2, y_max + 2)
     handles, labels = axs[2][2].get_legend_handles_labels()
     fig.legend(handles, labels, loc='center right')
     return fig
@@ -328,13 +397,15 @@ def plot_eeg_hdrs_across_range(
 
 def plot_eeg_hdr_across_delta_tau_alpha_range(eeg: EEGData, hdr_window: float, tr: float,
                                               delta_range: npt.ArrayLike, tau_range: npt.ArrayLike,
-                                              alpha_range: npt.ArrayLike) -> List[plt.Figure]:
+                                              alpha_range: npt.ArrayLike, mid_delta: float = PLOT_DELTA,
+                                              mid_tau: float = PLOT_TAU, mid_alpha: float = PLOT_ALPHA,
+                                              x_start: int = 25, x_length: int = 10) -> List[plt.Figure]:
     delta_range = np.round(delta_range, 4)
     tau_range = np.round(tau_range, 4)
     alpha_range = np.round(alpha_range, 4)
-    sparse_delta_range = [delta_range[0], PLOT_DELTA, delta_range[-1]]
-    sparse_tau_range = [tau_range[0], PLOT_TAU, tau_range[-1]]
-    sparse_alpha_range = [alpha_range[0], PLOT_ALPHA, alpha_range[-1]]
+    sparse_delta_range = [delta_range[0], mid_delta, delta_range[-1]]
+    sparse_tau_range = [tau_range[0], mid_tau, tau_range[-1]]
+    sparse_alpha_range = [alpha_range[0], mid_alpha, alpha_range[-1]]
     time_steps = np.arange(hdr_window * eeg.sample_frequency + 1) / eeg.sample_frequency
     r_fmri = get_ratio_eeg_freq_to_fmri_freq(eeg.sample_frequency, tr)
     time_steps_for_eeg = np.arange(len(eeg.data)) / eeg.sample_frequency
@@ -346,8 +417,6 @@ def plot_eeg_hdr_across_delta_tau_alpha_range(eeg: EEGData, hdr_window: float, t
         return downsample_hdr_for_eeg(r_fmri, hdr_for_eeg)
 
     base_lookup = lookup_by_value(PLOT_DELTA, PLOT_TAU, PLOT_ALPHA)
-    x_start = 25
-    x_length = 10
     try:
         while np.isnan(base_lookup[x_start]):
             x_start += x_length
