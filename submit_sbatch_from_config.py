@@ -51,7 +51,7 @@ if __name__ == '__main__':
     conda_env = config.defaults().get('conda_env', 'feeg_fmri')
 
     # Get directory with networks for EEG par files
-    network_dir = get_config_subsection_variable(config, 'network-dir', 'DEFAULT')
+    network_dir = get_config_subsection_variable(config, 'network-dir')
     # Get list of networks if specified
     networks = [network_name for network_name in get_values_for_section_ignoring_defaults(config, 'networks')]
     # By default, get all networks

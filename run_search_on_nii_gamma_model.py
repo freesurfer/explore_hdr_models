@@ -6,7 +6,7 @@ By default, uses canonical hemodynamic model:
     h(t<=delta) = 0
 
 Usage:
-python run_search.py \
+python run_search_on_nii_gamma_model.py \
     --par_file /autofs/space/ursa_004/users/HDRmodeling/EEGspikeTrains/DAN5/s06_137-r1.par \
     --nii-file /autofs/space/ursa_004/users/HDRmodeling/HDRshape/s06_137/rest/fsrest_lh_native/res/res-001.nii.gz \
     --out-file
