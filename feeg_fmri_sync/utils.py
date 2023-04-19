@@ -12,7 +12,7 @@ from feeg_fmri_sync.constants import PROJECT_DIR, FMRI_DIR, fMRIData
 
 
 def get_i_for_subj_and_run(subj: str, run: str, subj_and_run_list: List[str]):
-    for i, subj_and_run in subj_and_run_list:
+    for i, subj_and_run in enumerate(subj_and_run_list):
         if subj in subj_and_run and run in subj_and_run:
             return i
     raise ValueError(f'Cannot find subj {subj}, run {run} in {subj_and_run_list}')

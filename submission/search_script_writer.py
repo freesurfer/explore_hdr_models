@@ -58,18 +58,18 @@ class SearchScriptWriter(IterativeScriptWriter):
         self.par_network = par_network
 
     def get_lines_for_identifier(self, identifier) -> List[str]:
-        lines = [f'time python {self.fmri_files.script_path} \\'
-                 f'--par-file={self.par_file} \\',
-                 f'--out-dir={self.out_dir}/{self.fmri_files.get_str_for_identifier(identifier)} \\']
-        lines.extend([f'{line} \\' for line in self.fmri_files.get_lines_for_identifier(identifier)])
-        lines.extend([f'{line} \\' for line in self.hdr_analysis.get_lines()])
+        lines = [f'time python {self.fmri_files.script_path} \\',
+                 f'\t--par-file={self.par_file} \\',
+                 f'\t--out-dir={self.out_dir}/{self.fmri_files.get_str_for_identifier(identifier)} \\']
+        lines.extend([f'\t{line} \\' for line in self.fmri_files.get_lines_for_identifier(identifier)])
+        lines.extend([f'\t{line} \\' for line in self.hdr_analysis.get_lines()])
         if self.verbose:
-            lines.append('--verbose \\')
+            lines.append('\t--verbose \\')
         if self.par_network:
             out_name = f'{self.fmri_files.get_out_name(identifier)}_{self.par_network}'
         else:
             out_name = self.fmri_files.get_out_name(identifier)
-        lines.append(f'--out-name={out_name}')
+        lines.append(f'\t--out-name={out_name}')
         return lines
 
     def get_identifiers(self) -> Generator[int, None, None]:

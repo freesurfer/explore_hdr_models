@@ -6,7 +6,7 @@ def get_config_subsection_variable(config: ConfigParser, varname: str, section: 
     if not section:
         section_with_variables = config.defaults()
         if varname not in section_with_variables:
-            raise ValueError(f'Unable to locate {varname} variable in section "{section}"')
+            raise ValueError(f'Unable to locate {varname} variable in DEFAULT section')
         return section_with_variables[varname]
     return config.get(section, varname)
 
@@ -20,7 +20,7 @@ def get_config_section(config: ConfigParser, section: str) -> SectionProxy:
 def get_values_for_section_ignoring_defaults(config: ConfigParser, section: str) -> List[str]:
     retlist = []
     defaults = config.defaults()
-    for key, value in get_config_section(config, section):
+    for key, value in get_config_section(config, section).items():
         if key in defaults:
             continue
         retlist.append(value)
@@ -30,5 +30,5 @@ def get_values_for_section_ignoring_defaults(config: ConfigParser, section: str)
 def get_root(config: ConfigParser, location: Optional[str]) -> str:
     if location:
         return get_config_subsection_variable(config, 'root-dir', f'location.{location}')
-    return get_config_subsection_variable(config, 'root-dir', 'DEFAULT')
+    return get_config_subsection_variable(config, 'root-dir')
 

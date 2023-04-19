@@ -32,7 +32,7 @@ parser.add_argument('--only-files', action='store_true', help='Only generate fil
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    config = configparser.ConfigParser()
+    config = configparser.ConfigParser(interpolation=None)
     config.read(args.config)
     # Set root dir
     root_dir = get_root(config, args.location)
@@ -74,7 +74,7 @@ if __name__ == '__main__':
         subject_names_list = []
         for d in os.scandir(os.path.join(root_dir, network_dir, network)):
             try:
-                subject_names_list.append(re.search('s[0-9]+_', d.name).group(1))
+                subject_names_list.append(re.search('(s[0-9_A-Za-z-]+)-r[0-9]+\.par', d.name).group(1))
                 all_subjects_and_runs_list.append(d.name)
             except AttributeError:
                 pass
@@ -93,7 +93,8 @@ if __name__ == '__main__':
             eeg_files = []
             for eeg_filename in eeg_filenames:
                 eeg_files.extend(glob.glob(os.path.join(root_dir, network_dir, network, eeg_filename)))
-        
+            if len(eeg_files) == 0:
+                print(f'Unable to find matching eeg files for {eeg_filenames} in {os.path.join(root_dir, network_dir, network)}')
             for eeg_file in eeg_files:
                 try:
                     run = re.search(f'{subject}-r([0-9]+).par', eeg_file).group(1)

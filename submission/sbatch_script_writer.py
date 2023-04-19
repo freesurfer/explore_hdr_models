@@ -7,12 +7,14 @@ from submission.parse_config import get_config_section
 
 class SBatchWriter(ScriptWriter):
     def __init__(self, config):
-        self.sbatch_options = get_config_section(config, 'sbatch')
+        self.sbatch_options: Dict[str, str] = get_config_section(config, 'sbatch').items()
+        self.config_defaults = config.defaults()
 
     def get_lines(self):
         lines = []
         for key, value in self.sbatch_options:
-            lines.append(f'#SBATCH --{key}={value}')
+            if key not in self.config_defaults.keys():
+                lines.append(f'#SBATCH --{key}={value}')
         return lines
 
 
