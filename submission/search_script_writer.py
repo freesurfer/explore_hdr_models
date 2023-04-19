@@ -1,9 +1,9 @@
 import os
 import pathlib
 import re
-from abc import ABC, abstractmethod, ABCMeta
+from abc import ABCMeta
 from configparser import ConfigParser
-from typing import List, Dict, Generator, Optional, Type
+from typing import List, Dict, Generator, Optional, Type, TypeVar
 
 from submission.parse_config import get_config_section, get_config_subsection_variable
 from submission.script_writers import ScriptWriter, IterativeScriptWriter
@@ -11,7 +11,11 @@ from feeg_fmri_sync.utils import get_fmri_filepaths, get_i_for_subj_and_run
 
 
 class HDRSearch(ScriptWriter, metaclass=ABCMeta):
+    type_str: str
     lookup_str: str
+
+
+HDRSearch_subclass = TypeVar('HDRSearch_subclass', bound=HDRSearch)
 
 
 class FMRIFiles(IterativeScriptWriter, metaclass=ABCMeta):
@@ -20,20 +24,21 @@ class FMRIFiles(IterativeScriptWriter, metaclass=ABCMeta):
     variables: Dict[str, str]
     out_name: str
 
-    @abstractmethod
     def get_out_name(self, identifier) -> str:
         id_str = self.get_str_for_identifier(identifier)
         return f'{self.out_name}_{id_str}' if id_str else self.out_name
 
-    @abstractmethod
     def get_str_for_identifier(self, identifier) -> str:
         return ''
 
 
+fMRIFiles_subclass = TypeVar('fMRIFiles_subclass', bound=FMRIFiles)
+
+
 class SearchScriptWriter(IterativeScriptWriter):
     def __init__(self,
-                 fmri_files: FMRIFiles,
-                 hdr_search: HDRSearch,
+                 fmri_files: fMRIFiles_subclass,
+                 hdr_search: HDRSearch_subclass,
                  config: ConfigParser,
                  root_dir: str,
                  par_file: str,
@@ -71,7 +76,8 @@ class SearchScriptWriter(IterativeScriptWriter):
 
 
 class GammaCanonicalHDR(HDRSearch):
-    lookup_str = f'modeling-type.gamma-canonical-hdr'
+    type_str = 'gamma-canonical-hdr'
+    lookup_str = f'modeling-type.{type_str}'
 
     def __init__(self, config):
         self.search_variables = get_config_section(config, self.lookup_str)
@@ -101,7 +107,7 @@ class NiiFMRIFiles(FMRIFiles):
         for i in range(len(self.fmri_filenames)):
             yield i
 
-    def get_lines(self, fmri_i):
+    def get_lines_for_identifier(self, fmri_i):
         return [f'--nii-file={self.fmri_filenames[fmri_i]}']
 
     def get_str_for_identifier(self, identifier) -> str:
@@ -124,7 +130,7 @@ class RoiFile(FMRIFiles):
     def get_identifiers(self) -> Generator[int, None, None]:
         yield 0
 
-    def get_lines(self, ind):
+    def get_lines_for_identifier(self, ind):
         return [
             f'--mat-file={self.mat_file}',
             f'--sub-and-run-i={self.subj_and_run_i}'
@@ -136,6 +142,14 @@ TYPE_STR_TO_FMRIFILE_CLASS = {
 }
 
 
-def get_fmri_files_creator(config: ConfigParser) -> Type[FMRIFiles]:
+def get_fmri_files_creator(config: ConfigParser) -> Type[fMRIFiles_subclass]:
     return TYPE_STR_TO_FMRIFILE_CLASS[get_config_subsection_variable(config, 'fmri-input')]
 
+
+TYPE_STR_TO_HDRSEARCH_CLASS = {
+    klass.type_str: klass for klass in [GammaCanonicalHDR]
+}
+
+
+def get_hdr_search_creator(config: ConfigParser) -> Type[HDRSearch_subclass]:
+    return TYPE_STR_TO_HDRSEARCH_CLASS[get_config_subsection_variable(config, 'modeling-type')]

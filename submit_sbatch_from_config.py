@@ -10,7 +10,11 @@ import subprocess
 from typing import Dict
 
 from submission.parse_config import get_root, get_config_subsection_variable, get_config_section
-from submission.search_script_writer import HDRSearch, get_fmri_files_creator, SearchScriptWriter
+from submission.search_script_writer import (
+    get_fmri_files_creator,
+    SearchScriptWriter,
+    get_hdr_search_creator
+)
 from submission.sbatch_script_writer import SBatchWriter, WriteSubmissionSh
 
 
@@ -39,7 +43,7 @@ if __name__ == '__main__':
     # Grab SBATCH inputs
     sbatch_writer = SBatchWriter(config)
     # Grab search parameters
-    hdr_search = HDRSearch(config)
+    hdr_search = get_hdr_search_creator(config)(config)
     # Get type of fmri files we expect
     fmri_files_klass = get_fmri_files_creator(config)
     # Get conda environment search command should be run in
@@ -119,4 +123,3 @@ if __name__ == '__main__':
         processes = []
         for job_name, sbatch_script in sbatch_job_name_to_out_files.items():
             processes.append(subprocess.check_call(['sbatch', f'--job-name={job_name}', sbatch_script]))
-
