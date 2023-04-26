@@ -133,11 +133,11 @@ if __name__ == '__main__':
         submitted_jobs = []
         for process in processes:
             out = process.stdout.decode("utf8")
-            print(out)
+            print(out.strip())
             job_id_match = re.search(r'([0-9]+)', out)
             if job_id_match:
                 submitted_jobs.append(f'{job_id_match.group(1)}\n')
 
-        with open(os.path.join(root_dir, sbatch_out_dir, 'submitted_jobs.txt', 'w')) as f:
+        with open(os.path.join(root_dir, sbatch_out_dir, 'submitted_jobs.txt'), 'w') as f:
             f.writelines(submitted_jobs)
 
