@@ -122,16 +122,16 @@ if __name__ == '__main__':
         ret_dict = {
             'model_name': model_name,
             'column': column,
-            'delta': f'{delta:.6f}',
-            'tau': f'{tau:.6f}',
-            'alpha': f'{alpha:.6f}',
+            'delta': float(delta),
+            'tau': float(tau),
+            'alpha': float(alpha),
             'beta': {
-                'beta_0': beta[0][0],
-                'beta': beta[1][0]
+                'beta_0': float(beta[0][0]),
+                'beta': float(beta[1][0])
             },
             'residual': residual.data.tolist(),
-            'residual_variance': residual_variance,
-            'degrees_of_freedom': dof
+            'residual_variance': float(residual_variance),
+            'degrees_of_freedom': int(dof)
         }
 
         out_name = f'{model_name}_best_fit' \
