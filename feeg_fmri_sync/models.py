@@ -15,10 +15,13 @@ from feeg_fmri_sync.constants import (
 from feeg_fmri_sync.utils import (
     get_hdr_for_eeg,
     sum_hdr_for_eeg, get_ratio_eeg_freq_to_fmri_freq, get_est_hemodynamic_response, downsample_hdr_for_eeg, fit_glm,
+    get_contrast_matrix,
 )
 
 
 class CanonicalHemodynamicModel:
+    save_plot_dir: Optional[str] = None
+
     def __init__(self, eeg: EEGData, fmri: fMRIData, name: str, n_tr_skip_beg: int = 1,
                  hemodynamic_response_window: float = 30, display_plot: bool = True,
                  save_plot_dir: Optional[str] = None):
@@ -37,10 +40,7 @@ class CanonicalHemodynamicModel:
         # Plotting parameters
         self.name: str = name
         self.display_plot: bool = display_plot
-        if save_plot_dir:
-            if not os.path.exists(save_plot_dir):
-                os.makedirs(save_plot_dir)
-        self.save_plot_dir: Optional[str] = save_plot_dir
+        self.set_save_plot_dir(save_plot_dir)
         voxel_name, _ = self.fmri.get_voxel_i(0)
         self.plot_voxels = [voxel_name]
         self.figures_to_plot = []
@@ -50,6 +50,12 @@ class CanonicalHemodynamicModel:
         self.transform_actual_fmri: Optional[Callable] = None
         self.est_fmri_size: Optional[int] = None
         self.est_fmri_n_trs: Optional[int] = None
+
+    def set_save_plot_dir(self, save_plot_dir: Optional[str]):
+        if save_plot_dir:
+            if not os.path.exists(save_plot_dir):
+                os.makedirs(save_plot_dir)
+        self.save_plot_dir = save_plot_dir
 
     def __str__(self):
         return self.__name__
@@ -140,7 +146,8 @@ class CanonicalHemodynamicModel:
                 self.transform_actual_fmri = lambda x: x.compress(actual_fmri_compression_mask, axis=tr_axis)
         return self.transform_est_fmri, self.transform_actual_fmri
 
-    def score_from_hemodynamic_response(self, est_hemodynamic_response: npt.NDArray) -> npt.NDArray:
+    def score_from_hemodynamic_response(self, est_hemodynamic_response: npt.NDArray, column: Optional[str]) -> Tuple[
+            npt.NDArray, fMRIData, npt.NDArray, float]:
         hemodynamic_response_to_eeg, est_fmri = self.get_est_fmri_hemodynamic_response(
             est_hemodynamic_response
         )
@@ -156,22 +163,40 @@ class CanonicalHemodynamicModel:
             self.fmri.TR,
             voxel_names=self.fmri.voxel_names
         )
+        if column:
+            _, voxel_data = actual_fmri.get_voxel_by_name(column)
+            actual_fmri = fMRIData(
+                voxel_data,
+                self.fmri.TR,
+                voxel_names=[column]
+            )
         beta, residual, residual_variance, degrees_of_freedom = fit_glm(est_fmri, actual_fmri)
-        residual = fMRIData(residual, TR=self.fmri.TR, voxel_names=self.fmri.voxel_names)
+        if column:
+            residual = fMRIData(residual.squeeze(), TR=self.fmri.TR, voxel_names=[column])
+        else:
+            residual = fMRIData(residual, TR=self.fmri.TR, voxel_names=self.fmri.voxel_names)
         if self.display_plot or self.save_plot_dir:
             for voxel_name in self.plot_voxels:
-                i, voxel_data = actual_fmri.get_voxel_by_name(voxel_name)
-                _, residual_data = residual.get_voxel_by_name(voxel_name)
+                if actual_fmri.is_single_voxel():
+                    voxel_data = actual_fmri.data
+                    residual_data = residual.data
+                    i = 0
+                    residual_variance_at_i = residual_variance.item()
+                else:
+                    i, voxel_data = actual_fmri.get_voxel_by_name(voxel_name)
+                    _, residual_data = residual.get_voxel_by_name(voxel_name)
+                    residual_variance_at_i = residual_variance[i].item()
+                beta_val = np.matmul(get_contrast_matrix(), beta)[i].item()
                 self.compare_est_fmri_with_actual(
-                    est_fmri.data,
+                    beta_val * est_fmri.data,
                     voxel_data,
                     residual_data,
-                    residual_variance[i].item(),
+                    residual_variance_at_i,
                     actual_fmri_name=voxel_name
                 )
                 if self.display_plot:
-                    print(f'Residual Variance is {residual_variance[i].item():.6f}')
-        return residual_variance
+                    print(f'Residual Variance is {residual_variance_at_i:.6f}')
+        return beta, residual, residual_variance, degrees_of_freedom
 
     def score(self, delta: float, tau: float, alpha: float):
         """
@@ -179,10 +204,18 @@ class CanonicalHemodynamicModel:
         tau:
         alpha: exponent
         """
+        _, _, residual_variance, _ = self.score_detailed(delta, tau, alpha)
+        return residual_variance
+
+    def score_detailed(self, delta: float, tau: float, alpha: float, column: Optional[str] = None) -> Tuple[
+            npt.NDArray, fMRIData, npt.NDArray, float]:
         if self.display_plot:
-            print(f"Scoring {self.name} delta={delta}, tau={tau}, alpha={alpha}")
+            name = self.name
+            if column:
+                name = f'{self.name}, column {column}'
+            print(f"Scoring {name}: delta={delta}, tau={tau}, alpha={alpha}")
         est_hemodynamic_response = self.get_est_hemodynamic_response(delta, tau, alpha)
-        residual_variance = self.score_from_hemodynamic_response(est_hemodynamic_response)
+        beta, residual, residual_variance, dof = self.score_from_hemodynamic_response(est_hemodynamic_response, column)
         if self.display_plot:
             plt.show()
         elif self.save_plot_dir:
@@ -190,7 +223,7 @@ class CanonicalHemodynamicModel:
                 for fig in self.figures_to_plot:
                     pdf.savefig(fig, bbox_inches='tight')
         plt.close('all')
-        return residual_variance
+        return beta, residual, residual_variance, dof
 
 
 class VectorizedSumEEGHemodynamicModel(CanonicalHemodynamicModel):

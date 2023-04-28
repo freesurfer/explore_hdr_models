@@ -74,6 +74,10 @@ class fMRIData:
         return self.voxel_names[i], self.data[i, :]
 
     def get_voxel_by_name(self, name) -> Tuple[npt.NDArray, npt.NDArray]:
+        if self.is_single_voxel():
+            if self.voxel_names != [name]:
+                raise ValueError(f'{name} is not present in voxel_names: {self.voxel_names}')
+            return np.zeros(1), self.data
         i = np.where(self.voxel_names == name)
         if len(i) != 1:
             raise ValueError(f'{name} present more than once in voxel_names: {self.voxel_names}')

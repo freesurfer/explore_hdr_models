@@ -16,6 +16,8 @@ python run_search_on_roi_gamma_model.py \
 
 """
 import argparse
+import json
+
 import numpy as np
 import os
 import pandas as pd
@@ -29,8 +31,7 @@ from feeg_fmri_sync.plotting import (
     plot_eeg_hdr_across_delta_tau_alpha_range,
     save_plot
 )
-from feeg_fmri_sync.search import search_voxels
-
+from feeg_fmri_sync.search import search_voxels, analyze_best_fit_models
 
 parser = argparse.ArgumentParser()
 
@@ -90,6 +91,7 @@ if __name__ == '__main__':
             args.hdr_window,
             display_plot=False
         )
+        # Create a model to plot actual fMRI vs estimated
         model_for_plotting = SEARCH_TYPES[search_type]['model'](
             eeg,
             fMRIData(fmri_voxel_data, args.tr, fmri_voxel_names),
@@ -99,6 +101,7 @@ if __name__ == '__main__':
             display_plot=False,
             save_plot_dir=args.out_dir
         )
+        # Save plot of how the variables change relating to each other across the search space
         save_plot(
             os.path.join(args.out_dir, f'{args.out_name}_across_search_space'),
             plot_eeg_hdr_across_delta_tau_alpha_range,
@@ -113,6 +116,30 @@ if __name__ == '__main__':
         model_for_plotting.score(PLOT_DELTA, PLOT_TAU, PLOT_ALPHA)
 
     descriptions, df = search_voxels(models, delta_range, tau_range, alpha_range, args.verbose)
+
+    for data_packet in analyze_best_fit_models(descriptions, models, args.out_dir):
+        model_name, column, delta, tau, alpha, beta, residual, residual_variance, dof = data_packet
+        ret_dict = {
+            'model_name': model_name,
+            'column': column,
+            'delta': f'{delta:.6f}',
+            'tau': f'{tau:.6f}',
+            'alpha': f'{alpha:.6f}',
+            'beta': {
+                'beta_0': beta[0][0],
+                'beta': beta[1][0]
+            },
+            'residual': residual.data.tolist(),
+            'residual_variance': residual_variance,
+            'degrees_of_freedom': dof
+        }
+
+        out_name = f'{model_name}_best_fit' \
+                   f'{os.path.basename(args.mat_file).split(".")[0]}_sub{args.sub_and_run_i}.json'
+        if args.verbose:
+            print(f'Writing search summary to {out_name}')
+        with open(os.path.join(args.out_dir, out_name), 'w') as f:
+            json.dump(ret_dict, f)
 
     for model_name, description in zip(df['model_name'].unique(), descriptions):
         parameters_chosen_by_search = []

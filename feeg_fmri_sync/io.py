@@ -30,4 +30,4 @@ def load_roi_from_mat(mat_file: str, subj_and_run_i: int) -> Tuple[npt.NDArray, 
         raise ValueError(f'Expect variable "subIndx" to be defined in {mat_file}')
     fmri_data = mat_data['X']
     ind = mat_data['subIndx'].squeeze()
-    return fmri_data[ind == subj_and_run_i, :].T, np.arange(fmri_data.shape[1])
+    return fmri_data[ind == subj_and_run_i, :].T, np.arange(1, fmri_data.shape[1]+1)

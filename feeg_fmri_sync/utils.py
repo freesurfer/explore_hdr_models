@@ -76,13 +76,18 @@ def fit_glm(est_fmri: fMRIData, actual_fmri: fMRIData) -> Tuple[npt.NDArray, npt
     y_drop_nans_t = np.extract(~y_nan, actual_fmri.data).reshape(
         (actual_fmri.get_n_voxels(), x_drop_nans.shape[0]))
     # ones not necessary here
-    x_t = np.array([x_drop_nans, np.ones(x_drop_nans.shape[0])])
+    x_t = np.array([np.ones(x_drop_nans.shape[0]), x_drop_nans])
     beta = np.matmul(np.matmul(np.linalg.inv(np.matmul(x_t, x_t.T)), x_t), y_drop_nans_t.T)
     y_hat = np.matmul(x_t.T, beta)
-    residual = np.subtract(y_drop_nans_t.T, y_hat).T
+    residual = np.subtract(y_drop_nans_t.T, y_hat).T.squeeze()
     degrees_of_freedom = x_t.shape[1] - x_t.shape[0]
     residual_variance = np.sum(residual ** 2, axis=actual_fmri.get_tr_axis()) / degrees_of_freedom
     return beta, residual, residual_variance, degrees_of_freedom
+
+
+def get_contrast_matrix() -> npt.NDArray:
+    """Return contrast matrix to convert beta into a 1D array that applies to X, not the constant"""
+    return np.array([0, 1])
 
 
 def get_hdr_for_eeg(eeg_data: npt.NDArray, hdr: npt.NDArray) -> npt.NDArray:

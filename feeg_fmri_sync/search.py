@@ -1,9 +1,10 @@
 import numpy as np
+import numpy.typing as npt
 
 import pandas as pd
 import time
 
-from typing import Dict, List, Type, Optional
+from typing import Dict, List, Type, Optional, Generator, Tuple
 
 from feeg_fmri_sync import CanonicalHemodynamicModel
 from feeg_fmri_sync.constants import EEGData, fMRIData
@@ -98,3 +99,31 @@ def search_voxels(models, delta_range, tau_range, alpha_range, verbose=True):
         ret_desc.name = f'{model_name}'
         descriptions.append(ret_desc)    
     return descriptions, df
+
+
+def analyze_best_fit_models(descriptions: List[pd.DataFrame],
+                            models: Dict[str, CanonicalHemodynamicModel],
+                            out_dir: Optional[str] = None,
+                            display_plot: bool = False) -> Generator[Tuple[str, str, float, float, float, npt.NDArray,
+                                                                     npt.NDArray, npt.NDArray, float], None, None]:
+    for (model_name, model), description in zip(models.items(), descriptions):
+        old_display_plot = model.display_plot
+        old_out_dir = model.save_plot_dir
+        old_plot_voxels = model.plot_voxels
+        model.set_save_plot_dir(out_dir)
+        model.display_plot = display_plot
+        for column in description.columns:
+            delta = float(description.loc['delta', column])
+            tau = float(description.loc['tau', column])
+            alpha = float(description.loc['alpha', column])
+
+            model.plot_voxels = [column]
+            beta, residual, residual_variance, dof = model.score_detailed(delta, tau, alpha, column=column)
+            if not np.isclose(residual_variance, float(description.loc['min', column])):
+                raise RuntimeWarning(f'Second scoring did not yield expected residual variance. Expected '
+                                     f'{float(description.loc["min", column])}. Got {residual_variance.item()}')
+            yield model_name, column, delta, tau, alpha, beta, residual, residual_variance, dof
+
+        model.save_plot_dir = old_out_dir
+        model.display_plot = old_display_plot
+        model.plot_voxels = old_plot_voxels
