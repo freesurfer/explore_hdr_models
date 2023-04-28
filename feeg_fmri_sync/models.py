@@ -12,6 +12,7 @@ from feeg_fmri_sync.constants import (
     EEGData,
     fMRIData
 )
+from feeg_fmri_sync.plotting import generate_latex_label
 from feeg_fmri_sync.utils import (
     get_hdr_for_eeg,
     sum_hdr_for_eeg, get_ratio_eeg_freq_to_fmri_freq, get_est_hemodynamic_response, downsample_hdr_for_eeg, fit_glm,
@@ -21,6 +22,9 @@ from feeg_fmri_sync.utils import (
 
 class CanonicalHemodynamicModel:
     save_plot_dir: Optional[str] = None
+    delta: Optional[float] = None
+    tau: Optional[float] = None
+    alpha: Optional[float] = None
 
     def __init__(self, eeg: EEGData, fmri: fMRIData, name: str, n_tr_skip_beg: int = 1,
                  hemodynamic_response_window: float = 30, display_plot: bool = True,
@@ -57,6 +61,16 @@ class CanonicalHemodynamicModel:
                 os.makedirs(save_plot_dir)
         self.save_plot_dir = save_plot_dir
 
+    def set_params(self, delta, tau, alpha):
+        self.delta = delta
+        self.tau = tau
+        self.alpha = alpha
+
+    def unset_params(self):
+        self.delta = None
+        self.tau = None
+        self.alpha = None
+
     def __str__(self):
         return self.__name__
 
@@ -67,9 +81,9 @@ class CanonicalHemodynamicModel:
         plt.cla()
         time_steps_for_eeg = np.arange(len(self.eeg.data)) / self.eeg.sample_frequency
         time_steps_for_fmri = time_steps_for_eeg[::self.r_fmri]
+        plt.plot(time_steps_for_eeg, self.eeg.data, label='EEG spikes', alpha=0.25)
         plt.plot(time_steps_for_fmri, fmri_hdr, '.-', label='HDR-fMRI')
         plt.plot(time_steps_for_eeg, hdr, label='HDR-EEG')
-        plt.plot(time_steps_for_eeg, self.eeg.data, label='EEG spikes')
         plt.title(f'Estimated hemodynamic response (EEG and fMRI time scales) from EEG spikes using model={self.name}')
         plt.legend()
         self.figures_to_plot.append(plt.gcf())
@@ -84,18 +98,19 @@ class CanonicalHemodynamicModel:
         plt.cla()
         time_steps_for_eeg = np.arange(len(self.eeg.data)) / self.eeg.sample_frequency
         time_steps_for_fmri = time_steps_for_eeg[::self.r_fmri]
+        plt.plot(time_steps_for_eeg, self.eeg.data, label='EEG spikes', alpha=0.25)
         if residual is not None:
             x_nan = np.isnan(est_fmri)
             plt.plot(time_steps_for_fmri[~x_nan], residual, '.', label='Residual')
             plt.xlabel(f'Residual Variance is {residual_variance:.6f}')
         plt.plot(time_steps_for_fmri, actual_fmri, label='Actual fMRI')
         plt.plot(time_steps_for_fmri, est_fmri, label='Estimated fMRI')
-        plt.plot(time_steps_for_eeg, self.eeg.data, label='EEG spikes')
         if not actual_fmri_name:
             title = f'Estimated fMRI HDR from EEG spikes compared with actual fMRI using model={self.name}'
         else:
-            title = f'Estimated fMRI HDR from EEG spikes compared with actual fMRI ({actual_fmri_name}) ' \
-                    f'using model={self.name}'
+            title = f'Estimated fMRI HDR from EEG spikes compared with actual fMRI ({actual_fmri_name}) \n' \
+                    f'using model={self.name}, {generate_latex_label("delta")}={self.delta}, ' \
+                    f'{generate_latex_label("tau")}={self.tau}, {generate_latex_label("alpha")}={self.alpha},'
         plt.title(title)
         plt.legend()
         self.figures_to_plot.append(plt.gcf())
@@ -209,6 +224,7 @@ class CanonicalHemodynamicModel:
 
     def score_detailed(self, delta: float, tau: float, alpha: float, column: Optional[str] = None) -> Tuple[
             npt.NDArray, fMRIData, npt.NDArray, float]:
+        self.set_params(delta, tau, alpha)
         if self.display_plot:
             name = self.name
             if column:
@@ -223,6 +239,7 @@ class CanonicalHemodynamicModel:
                 for fig in self.figures_to_plot:
                     pdf.savefig(fig, bbox_inches='tight')
         plt.close('all')
+        self.unset_params()
         return beta, residual, residual_variance, dof
 
 
