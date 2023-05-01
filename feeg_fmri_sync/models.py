@@ -71,6 +71,10 @@ class CanonicalHemodynamicModel:
         self.tau = None
         self.alpha = None
 
+    def get_param_str(self) -> str:
+        return f'{generate_latex_label("delta")} = {self.delta: .4f}, ' \
+               f'{generate_latex_label("tau")} = {self.tau: .4f}, {generate_latex_label("alpha")} = {self.alpha: .4f}, '
+
     def __str__(self):
         return self.__name__
 
@@ -84,7 +88,8 @@ class CanonicalHemodynamicModel:
         plt.plot(time_steps_for_eeg, self.eeg.data, label='EEG spikes', alpha=0.25)
         plt.plot(time_steps_for_fmri, fmri_hdr, '.-', label='HDR-fMRI')
         plt.plot(time_steps_for_eeg, hdr, label='HDR-EEG')
-        plt.title(f'Estimated hemodynamic response (EEG and fMRI time scales) from EEG spikes using model={self.name}')
+        plt.title(f'Estimated hemodynamic response (EEG and fMRI time scales) from EEG spikes using \n'
+                  f'model={self.name}, {self.get_param_str()}')
         plt.legend()
         self.figures_to_plot.append(plt.gcf())
 
@@ -105,12 +110,13 @@ class CanonicalHemodynamicModel:
             plt.xlabel(f'Residual Variance is {residual_variance:.6f}')
         plt.plot(time_steps_for_fmri, actual_fmri, label='Actual fMRI')
         plt.plot(time_steps_for_fmri, est_fmri, label='Estimated fMRI')
+
         if not actual_fmri_name:
-            title = f'Estimated fMRI HDR from EEG spikes compared with actual fMRI using model={self.name}'
+            title = f'Estimated fMRI HDR from EEG spikes compared with actual fMRI using \n' \
+                    f'model={self.name}, {self.get_param_str()}'
         else:
             title = f'Estimated fMRI HDR from EEG spikes compared with actual fMRI ({actual_fmri_name}) \n' \
-                    f'using model={self.name}, {generate_latex_label("delta")}={self.delta:.4f}, ' \
-                    f'{generate_latex_label("tau")}={self.tau:.4f}, {generate_latex_label("alpha")}={self.alpha:.4f},'
+                    f'using model={self.name}, {self.get_param_str()}'
         plt.title(title)
         plt.legend()
         self.figures_to_plot.append(plt.gcf())
