@@ -3,22 +3,12 @@ from typing import List, Generator, Dict, Tuple
 from submission.script_writers import ScriptWriter
 from submission.search_script_writer import SearchScriptWriter
 from submission.parse_config import get_config_section, get_items_for_section_ignoring_defaults
-
-
-class SBatchWriter(ScriptWriter):
-    def __init__(self, config):
-        self.sbatch_options: List[Tuple[str, str]] = get_items_for_section_ignoring_defaults(config, 'sbatch')
-
-    def get_lines(self):
-        lines = []
-        for key, value in self.sbatch_options:
-            lines.append(f'#SBATCH --{key}={value}')
-        return lines
+from submission.submission_params_writer import SubmissionWriter
 
 
 class WriteSubmissionSh:
-    def __init__(self, sbatch: SBatchWriter, script_setup: SearchScriptWriter, conda_env='feeg_fmri'):
-        self.sbatch = sbatch
+    def __init__(self, submission_writer: SubmissionWriter, script_setup: SearchScriptWriter, conda_env='feeg_fmri'):
+        self.submission_writer = submission_writer
         self.conda_env = conda_env
         self.script_setup = script_setup
 
@@ -48,7 +38,7 @@ class WriteSubmissionSh:
 
     def write_file(self, identifier: int, out_name: str) -> str:
         lines = ['#!/bin/bash']
-        lines.extend(self.sbatch.get_lines())
+        lines.extend(self.submission_writer.get_lines())
         lines.extend(self.get_conda_lines())
         lines.append(f'conda activate {self.conda_env}')
         lines.extend(self.script_setup.get_lines_for_identifier(identifier))
@@ -56,3 +46,6 @@ class WriteSubmissionSh:
         with open(out_name, 'w') as f:
             f.writelines(lines)
         return out_name
+
+    def get_subprocess_command(self, job_name: str, submission_script: str) -> List[str]:
+        return self.submission_writer.get_subprocess_command(job_name, submission_script)

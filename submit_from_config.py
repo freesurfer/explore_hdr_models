@@ -7,7 +7,7 @@ import glob
 import os
 import re
 import subprocess
-from typing import Dict
+from typing import Dict, Tuple
 
 from submission.parse_config import (
     get_root,
@@ -19,11 +19,12 @@ from submission.search_script_writer import (
     SearchScriptWriter,
     get_hdr_search_creator
 )
-from submission.sbatch_script_writer import SBatchWriter, WriteSubmissionSh
-
+from submission.sbatch_script_writer import WriteSubmissionSh
+from submission.submission_params_writer import get_submission_writer_creator
 
 parser = argparse.ArgumentParser(
-    description='Wrapper command to submit a sbatch job. **ASSUMES EEG and fMRI data EXIST for the SAME SUBJECTS**'
+    description='Wrapper command to run a search from a config file. '
+                '**ASSUMES EEG and fMRI data EXIST for the SAME SUBJECTS**'
 )
 parser.add_argument('config', help=f'Configuration file to read parameters')
 parser.add_argument('--location', default=None, help=f'Location section to pull root directory from')
@@ -37,15 +38,17 @@ if __name__ == '__main__':
     # Set root dir
     root_dir = get_root(config, args.location)
 
-    # Set up place to write sbatch scripts
     out_dir = get_config_subsection_variable(config, 'out-dir')
-    sbatch_out_dir = os.path.join(root_dir, out_dir, 'sbatch_scripts')
-    if not os.path.exists(sbatch_out_dir):
-        os.makedirs(sbatch_out_dir)
-    sbatch_job_name_to_out_files: Dict[str, str] = {}
 
-    # Grab SBATCH inputs
-    sbatch_writer = SBatchWriter(config)
+    # Determine how we will run the script
+    how = get_config_subsection_variable(config, 'how')
+    script_out_dir = os.path.join(root_dir, out_dir, 'submission_scripts')
+    if not os.path.exists(script_out_dir):
+        os.makedirs(script_out_dir)
+    job_name_to_out_file_paths: Dict[str, Tuple[WriteSubmissionSh, str]] = {}
+
+    # Grab inputs specific for queueing engine
+    submission_header_writer = get_submission_writer_creator(config)(config)
     # Grab search parameters
     hdr_search = get_hdr_search_creator(config)(config)
     # Get type of fmri files we expect
@@ -118,17 +121,19 @@ if __name__ == '__main__':
                     network,
                     out_dir=os.path.join(root_dir, out_dir, network, subject, run)
                 )
-                sbatch_sh_file_writer = WriteSubmissionSh(sbatch_writer, search_script_writer, conda_env)
-                for identifier in sbatch_sh_file_writer.get_identifiers():
-                    sbatch_job_name_to_out_files[f'{network}_{subject}_r{run}'] = sbatch_sh_file_writer.write_file(
-                        identifier,
-                        os.path.join(root_dir, sbatch_out_dir, f'{network}_{subject}_r{run}_sbatch_script.sh')
-                    )
+                submission_sh_file_writer = WriteSubmissionSh(submission_header_writer, search_script_writer, conda_env)
+                for identifier in submission_sh_file_writer.get_identifiers():
+                    job_name_to_out_file_paths[f'{network}_{subject}_r{run}'] = (
+                        submission_sh_file_writer,
+                        submission_sh_file_writer.write_file(
+                            identifier,
+                            os.path.join(root_dir, script_out_dir, f'{network}_{subject}_r{run}_sbatch_script.sh')
+                        ))
     if not args.only_files:
         processes = []
-        for job_name, sbatch_script in sbatch_job_name_to_out_files.items():
+        for job_name, (file_writer, script_path) in job_name_to_out_file_paths.items():
             processes.append(
-                subprocess.run(['sbatch', f'--job-name={job_name}', sbatch_script], capture_output=True, check=True)
+                subprocess.run(file_writer.get_subprocess_command(job_name, script_path), capture_output=True, check=True)
             )
         submitted_jobs = []
         for process in processes:
@@ -138,6 +143,6 @@ if __name__ == '__main__':
             if job_id_match:
                 submitted_jobs.append(f'{job_id_match.group(1)}\n')
 
-        with open(os.path.join(root_dir, sbatch_out_dir, 'submitted_jobs.txt'), 'w') as f:
+        with open(os.path.join(root_dir, script_out_dir, 'submitted_jobs.txt'), 'w') as f:
             f.writelines(submitted_jobs)
 
