@@ -121,7 +121,7 @@ if __name__ == '__main__':
         model_name, column, delta, tau, alpha, beta, residual, residual_variance, dof = data_packet
         ret_dict = {
             'model_name': model_name,
-            'column': column,
+            'column': str(column),
             'delta': float(delta),
             'tau': float(tau),
             'alpha': float(alpha),
@@ -137,7 +137,7 @@ if __name__ == '__main__':
         out_name = f'{model_name}_best_fit' \
                    f'{os.path.basename(args.mat_file).split(".")[0]}_sub{args.sub_and_run_i}.json'
         if args.verbose:
-            print(f'Writing search summary to {out_name}')
+            print(f'Writing Best fit model for model {model_name}, {column} to {out_name}')
         with open(os.path.join(args.out_dir, out_name), 'w') as f:
             json.dump(ret_dict, f)
 
