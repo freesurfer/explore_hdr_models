@@ -1,3 +1,4 @@
+import subprocess
 from abc import ABCMeta, abstractmethod
 from configparser import ConfigParser
 from typing import List, Tuple, TypeVar, Type
@@ -49,6 +50,7 @@ class PbScriptWriter(SubmissionWriter):
         return lines
 
     def get_subprocess_command(self, job_name: str, script_path: str) -> List[str]:
+        subprocess.run(['chmod', '+x', script_path], check=True)
         return ['pbsubmit', '-c', f'"{script_path}"']
 
 
