@@ -109,8 +109,8 @@ class CanonicalHemodynamicModel:
             title = f'Estimated fMRI HDR from EEG spikes compared with actual fMRI using model={self.name}'
         else:
             title = f'Estimated fMRI HDR from EEG spikes compared with actual fMRI ({actual_fmri_name}) \n' \
-                    f'using model={self.name}, {generate_latex_label("delta")}={self.delta}, ' \
-                    f'{generate_latex_label("tau")}={self.tau}, {generate_latex_label("alpha")}={self.alpha},'
+                    f'using model={self.name}, {generate_latex_label("delta")}={self.delta:.4f}, ' \
+                    f'{generate_latex_label("tau")}={self.tau:.4f}, {generate_latex_label("alpha")}={self.alpha:.4f},'
         plt.title(title)
         plt.legend()
         self.figures_to_plot.append(plt.gcf())
@@ -229,7 +229,7 @@ class CanonicalHemodynamicModel:
             name = self.name
             if column:
                 name = f'{self.name}, column {column}'
-            print(f"Scoring {name}: delta={delta}, tau={tau}, alpha={alpha}")
+            print(f"Scoring {name}: delta={delta:.4f}, tau={tau:.4f}, alpha={alpha:.4f}")
         est_hemodynamic_response = self.get_est_hemodynamic_response(delta, tau, alpha)
         beta, residual, residual_variance, dof = self.score_from_hemodynamic_response(est_hemodynamic_response, column)
         if self.display_plot:
