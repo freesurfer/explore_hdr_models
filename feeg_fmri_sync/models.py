@@ -78,7 +78,7 @@ class CanonicalHemodynamicModel:
         self.plot_voxels = voxel_names_to_plot
 
     def plot_hdr_for_eeg(self, hdr: npt.NDArray, fmri_hdr: npt.NDArray) -> None:
-        plt.cla()
+        plt.figure()
         time_steps_for_eeg = np.arange(len(self.eeg.data)) / self.eeg.sample_frequency
         time_steps_for_fmri = time_steps_for_eeg[::self.r_fmri]
         plt.plot(time_steps_for_eeg, self.eeg.data, label='EEG spikes', alpha=0.25)
@@ -95,7 +95,7 @@ class CanonicalHemodynamicModel:
             residual: npt.NDArray,
             residual_variance: float,
             actual_fmri_name: Optional[str] = None):
-        plt.cla()
+        plt.figure()
         time_steps_for_eeg = np.arange(len(self.eeg.data)) / self.eeg.sample_frequency
         time_steps_for_fmri = time_steps_for_eeg[::self.r_fmri]
         plt.plot(time_steps_for_eeg, self.eeg.data, label='EEG spikes', alpha=0.25)
@@ -163,15 +163,11 @@ class CanonicalHemodynamicModel:
 
     def score_from_hemodynamic_response(self, est_hemodynamic_response: npt.NDArray, column: Optional[str]) -> Tuple[
             npt.NDArray, fMRIData, npt.NDArray, float]:
-        hemodynamic_response_to_eeg, est_fmri = self.get_est_fmri_hemodynamic_response(
-            est_hemodynamic_response
-        )
+        hemodynamic_response_to_eeg, est_fmri = self.get_est_fmri_hemodynamic_response(est_hemodynamic_response)
         if self.display_plot or self.save_plot_dir:
             self.plot_hdr_for_eeg(hemodynamic_response_to_eeg, est_fmri)
 
-        est_fmri_transform, actual_fmri_transform = self.get_transformation_functions(
-            fMRIData(est_fmri, self.fmri.TR)
-        )
+        est_fmri_transform, actual_fmri_transform = self.get_transformation_functions(fMRIData(est_fmri, self.fmri.TR))
         est_fmri = fMRIData(est_fmri_transform(est_fmri), self.fmri.TR)
         actual_fmri = fMRIData(
             actual_fmri_transform(self.fmri.data),
