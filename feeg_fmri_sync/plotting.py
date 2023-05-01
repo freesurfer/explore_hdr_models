@@ -199,15 +199,18 @@ def plot_all_search_results_2d_on_diff_colormaps(
     And that all lists are ascendingr,
     """
     df = df.astype(float)
-    if separate_by not in delta_tau_alpha_ordering:
-        raise ValueError(f'separate_by ({separate_by}) must be in {delta_tau_alpha_ordering}')
-    values_to_plot = df.columns[~np.isin(df.columns, delta_tau_alpha_ordering)]
+    dta = ['delta', 'tau', 'alpha']
+    display_dta = list(delta_tau_alpha_ordering)
+    if separate_by not in dta:
+        raise ValueError(f'separate_by ({separate_by}) must be in {dta}')
+    values_to_plot = df.columns[~np.isin(df.columns, dta)]
 
     subfigure_separator = np.unique(df[separate_by])
     n_subplot_rows, n_subplot_columns = get_subplot_axes(subfigure_separator)
-    delta_tau_alpha_ordering.remove(separate_by)
-    x_label = delta_tau_alpha_ordering[0]
-    y_label = delta_tau_alpha_ordering[1]
+    dta.remove(separate_by)
+    display_dta.remove(separate_by)
+    x_label = dta[0]
+    y_label = dta[1]
     figs = []
     for column in values_to_plot:
         fig, axs = plt.subplots(n_subplot_rows, n_subplot_columns)
@@ -222,9 +225,15 @@ def plot_all_search_results_2d_on_diff_colormaps(
                 ax = axs.flatten()[i]
             ax.set_title(f'{generate_latex_label(separate_by)} = {d:.2f}')
             if i / n_subplot_columns in range(n_subplot_rows):
-                ax.set_ylabel(generate_latex_label(y_label))
+                if dta != display_dta:
+                    ax.set_ylabel(generate_latex_label(x_label))
+                else:
+                    ax.set_ylabel(generate_latex_label(y_label))
             if i / n_subplot_columns == n_subplot_rows - 1:
-                ax.set_xlabel(generate_latex_label(x_label))
+                if dta != display_dta:
+                    ax.set_xlabel(generate_latex_label(y_label))
+                else:
+                    ax.set_xlabel(generate_latex_label(x_label))
             small_df = df[df[separate_by] == d]
             x_length = len(np.unique(small_df[x_label]))
             y_length = len(np.unique(small_df[y_label]))
@@ -237,9 +246,16 @@ def plot_all_search_results_2d_on_diff_colormaps(
             if not np.isclose(Y, Y[0]).all():
                 raise ValueError('df violates order expectations. Plotting is not safe')
             Z = np.reshape(small_df[column].values, (x_length, y_length))
-            cf = ax.contourf(X, Y, Z, cmap=cm.gist_earth, vmin=vmin, vmax=vmax)
-            ax.set_xlim([np.min(small_df[x_label]), np.max(small_df[x_label])])
-            ax.set_ylim([np.min(small_df[y_label]), np.max(small_df[y_label])])
+            xlim = [np.min(small_df[x_label]), np.max(small_df[x_label])]
+            ylim = [np.min(small_df[y_label]), np.max(small_df[y_label])]
+            if dta != display_dta:
+                xlim = [np.min(small_df[y_label]), np.max(small_df[y_label])]
+                ylim = [np.min(small_df[x_label]), np.max(small_df[x_label])]
+                cf = ax.contourf(Y, X, Z, cmap=cm.gist_earth, vmin=vmin, vmax=vmax)
+            else:
+                cf = ax.contourf(X, Y, Z, cmap=cm.gist_earth, vmin=vmin, vmax=vmax)
+            ax.set_xlim(xlim)
+            ax.set_ylim(ylim)
         plt.colorbar(cf, ax=axs.ravel().tolist())
         figs.append(fig)
         if verbose:
