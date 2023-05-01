@@ -189,24 +189,25 @@ def plot_all_search_results_2d_on_same_colormap(df, separate_by='alpha', verbose
     return figs
 
 
-def plot_all_search_results_2d_on_diff_colormaps(df, separate_by='alpha', verbose=True):
+def plot_all_search_results_2d_on_diff_colormaps(
+        df, separate_by='alpha', verbose=True,
+        delta_tau_alpha_ordering: Tuple[str, str, str] = ('delta', 'tau', 'alpha')):
     """Assumes df was created with
     for d in delta:
         for t in tau:
             for a in alpha:
-    And that all lists are ascending
+    And that all lists are ascendingr,
     """
     df = df.astype(float)
-    dta = ['delta', 'tau', 'alpha']
-    if separate_by not in dta:
-        raise ValueError(f'separate_by ({separate_by}) must be in {dta}')
-    values_to_plot = df.columns[~np.isin(df.columns, dta)]
+    if separate_by not in delta_tau_alpha_ordering:
+        raise ValueError(f'separate_by ({separate_by}) must be in {delta_tau_alpha_ordering}')
+    values_to_plot = df.columns[~np.isin(df.columns, delta_tau_alpha_ordering)]
 
     subfigure_separator = np.unique(df[separate_by])
     n_subplot_rows, n_subplot_columns = get_subplot_axes(subfigure_separator)
-    dta.remove(separate_by)
-    x_label = dta[0]
-    y_label = dta[1]
+    delta_tau_alpha_ordering.remove(separate_by)
+    x_label = delta_tau_alpha_ordering[0]
+    y_label = delta_tau_alpha_ordering[1]
     figs = []
     for column in values_to_plot:
         fig, axs = plt.subplots(n_subplot_rows, n_subplot_columns)
