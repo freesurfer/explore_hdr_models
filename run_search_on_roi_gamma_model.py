@@ -97,7 +97,7 @@ if __name__ == '__main__':
     tau_range = np.arange(args.tau_start, args.tau_end + args.tau_step, step=args.tau_step)
     alpha_range = np.arange(args.alpha_start, args.alpha_end + args.alpha_step, step=args.alpha_step)
 
-    search_kwargs = {kn: kv for kn, kv in vars(args) if kn in SEARCH_KWARG_NAMES}
+    search_kwargs = {kn: kv for kn, kv in vars(args).items() if kn in SEARCH_KWARG_NAMES}
     models = {f'{args.search_type}_{args.out_name}': SEARCH_TYPES[args.search_type]['model'](
         eeg,
         fMRIData(fmri_voxel_data, args.tr, fmri_voxel_names),
