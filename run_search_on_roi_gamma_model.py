@@ -143,7 +143,7 @@ if __name__ == '__main__':
                 print(f'Writing {variable_name} search to {out_name}')
             scipy.io.savemat(
                 os.path.join(args.out_dir, out_name),
-                data.take(v_i, axis=(data.shape[-1] - 1))
+                {variable_name: data.take(v_i, axis=(data.shape[-1] - 1))}
             )
 
         for i, (indexer_name, indexer_values) in enumerate(indexers):
