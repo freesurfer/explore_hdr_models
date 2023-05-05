@@ -141,9 +141,6 @@ if __name__ == '__main__':
                        f'{os.path.basename(args.mat_file).split(".")[0]}_sub{args.sub_and_run_i}.mat'
             if args.verbose:
                 print(f'Writing {variable_name} search to {out_name}')
-            print(data.shape)
-            print(len(data.shape) - 1)
-            print(v_i, variable_name)
             scipy.io.savemat(
                 os.path.join(args.out_dir, out_name),
                 {variable_name: data.take(v_i, axis=(len(data.shape) - 1))}
