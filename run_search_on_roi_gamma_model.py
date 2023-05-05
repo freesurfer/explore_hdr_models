@@ -123,7 +123,7 @@ if __name__ == '__main__':
         os.path.join(args.out_dir, f'{args.out_name}_across_search_space'),
         plot_eeg_hdr_across_delta_tau_alpha_range,
         eeg,
-        args.hdr_window,
+        args.hemodynamic_response_window,
         args.tr,
         delta_range,
         tau_range,
