@@ -109,7 +109,10 @@ class GammaCanonicalHDR(HDRSearch):
         specific_search_variables = self.search_types[identifier]
         lines = [f'--{varname}={variable}' for varname, variable in self.search_variables.items()]
         for varname, variable in specific_search_variables:
-            lines.append(f'--{varname}={variable}')
+            if varname == 'standardize':
+                lines.append(f'--{varname}')
+            else:
+                lines.append(f'--{varname}={variable}')
         return lines
 
     def get_identifiers(self) -> Generator[Any, None, None]:

@@ -53,3 +53,6 @@ class WriteSubmissionSh:
 
     def get_subprocess_command(self, job_name: str, submission_script: str) -> List[str]:
         return self.submission_writer.get_subprocess_command(job_name, submission_script)
+
+    def get_job_num_regex(self):
+        return self.submission_writer.get_job_num_regex()

@@ -13,7 +13,11 @@ class SubmissionWriter(ScriptWriter, metaclass=ABCMeta):
 
     @abstractmethod
     def get_subprocess_command(self, job_name: str, script_path: str) -> List[str]:
-        raise NotImplementedError
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_job_num_regex(self) -> str:
+        raise NotImplementedError()
 
 
 SubmissionWriter_subclass = TypeVar('SubmissionWriter_subclass', bound=SubmissionWriter)
@@ -35,6 +39,9 @@ class SBatchWriter(SubmissionWriter):
     def get_subprocess_command(self, job_name: str, script_path: str) -> List[str]:
         return ['sbatch', f'--job-name={job_name}', script_path]
 
+    def get_job_num_regex(self) -> str:
+        return r'([0-9]+)'
+
 
 class PbScriptWriter(SubmissionWriter):
     type_str = 'pbsubmit'
@@ -52,6 +59,9 @@ class PbScriptWriter(SubmissionWriter):
     def get_subprocess_command(self, job_name: str, script_path: str) -> List[str]:
         subprocess.run(['chmod', '+x', script_path], check=True)
         return ['pbsubmit', '-c', f'"{script_path}"']
+
+    def get_job_num_regex(self) -> str:
+        return r'([0-9]+\.launchpad)'
 
 
 TYPE_STR_TO_SUBMISSION_WRITER_CLASS = {

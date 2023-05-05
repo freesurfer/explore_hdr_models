@@ -132,17 +132,15 @@ if __name__ == '__main__':
                         ))
     if not args.only_files:
         processes = []
-        for job_name, (file_writer, script_path) in job_name_to_out_file_paths.items():
-            processes.append(
-                subprocess.run(file_writer.get_subprocess_command(job_name, script_path), capture_output=True, check=True)
-            )
         submitted_jobs = []
-        for process in processes:
+        for job_name, (file_writer, script_path) in job_name_to_out_file_paths.items():
+            process = subprocess.run(file_writer.get_subprocess_command(job_name, script_path), capture_output=True, check=True)
             out = process.stdout.decode("utf8")
             print(out.strip())
-            job_id_match = re.search(r'([0-9]+)', out)
+            job_id_match = re.search(file_writer.get_job_num_regex(), out)
             if job_id_match:
                 submitted_jobs.append(f'{job_id_match.group(1)}\n')
+            processes.append(process)
 
         with open(os.path.join(root_dir, script_out_dir, 'submitted_jobs.txt'), 'w') as f:
             f.writelines(submitted_jobs)
