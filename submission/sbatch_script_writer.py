@@ -1,4 +1,4 @@
-from typing import List, Generator, Dict, Tuple
+from typing import List, Generator, Dict, Tuple, Any
 
 from submission.script_writers import ScriptWriter
 from submission.search_script_writer import SearchScriptWriter
@@ -33,10 +33,10 @@ class WriteSubmissionSh:
             ''
         ]
 
-    def get_identifiers(self) -> Generator[int, None, None]:
+    def get_identifiers(self) -> Generator[Any, None, None]:
         yield self.script_setup.get_identifiers()
 
-    def write_file(self, identifier: int, out_name: str) -> str:
+    def write_file(self, identifier: Any, out_name: str) -> str:
         lines = ['#!/bin/bash']
         lines.extend(self.submission_writer.get_lines())
         lines.extend(self.get_conda_lines())

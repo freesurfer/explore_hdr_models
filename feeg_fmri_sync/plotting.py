@@ -10,7 +10,7 @@ from typing import Optional, Tuple, List, Callable
 
 from matplotlib.backends.backend_pdf import PdfPages
 
-from feeg_fmri_sync.constants import EEGData, PLOT_DELTA, PLOT_TAU, PLOT_ALPHA
+from feeg_fmri_sync.constants import EEGData, PLOT_DELTA, PLOT_TAU, PLOT_ALPHA, STATISTICS
 from feeg_fmri_sync.utils import get_ratio_eeg_freq_to_fmri_freq, get_est_hemodynamic_response, get_hdr_for_eeg, \
     downsample_hdr_for_eeg
 
@@ -468,6 +468,92 @@ def plot_eeg_hdr_across_delta_tau_alpha_range(eeg: EEGData, hdr_window: float, t
             x_length
         )
     ]
+
+
+def plot_quantile_delta_tau_alpha_by_voxel(quantile_df, delta_range, tau_range, alpha_range,
+                                           voxel_names: Optional[List[str]] = None) -> List[plt.Figure]:
+    """Plots range of delta, tau, and alpha. Generates one figure per voxel"""
+    figs = []
+    if voxel_names is None:
+        voxel_names = quantile_df['voxel_name'].unique()
+    for voxel_name in voxel_names:
+        smaller_data = quantile_df[quantile_df['voxel_name'] == voxel_name]
+        model_names = quantile_df['model_name'].unique()
+        quantile_vars = smaller_data['quantile_variable'].unique()
+        fig, axes = plt.subplots(len(quantile_vars), len(model_names), sharey='all')
+        fig.suptitle(f'Voxel: {voxel_name}')
+        fig.supylabel(f'Quantile variable')
+        for row_i, (quantile_var, ax_row) in enumerate(zip(quantile_vars, axes)):
+            smaller_smaller_data = smaller_data[smaller_data['quantile_variable'] == quantile_var]
+            for column_i, (model_name, ax) in enumerate(zip(model_names, ax_row)):
+                data_to_plot = smaller_smaller_data[smaller_smaller_data['model_name'] == model_name]
+                data_to_plot[['delta', 'tau', 'alpha']].boxplot(ax=ax, rot=45, showmeans=True)
+                ax.plot(1, delta_range[0], 'ro', alpha=.25, label=f'Minimum {generate_latex_label("delta")} searched')
+                ax.plot(1, delta_range[-1], 'ro', alpha=.25, label=f'Maximum {generate_latex_label("delta")} searched')
+                ax.plot(2, tau_range[0], 'ro', alpha=.25, label=f'Minimum {generate_latex_label("tau")} searched')
+                ax.plot(2, tau_range[-1], 'ro', alpha=.25, label=f'Maximum {generate_latex_label("tau")} searched')
+                ax.plot(3, alpha_range[0], 'ro', alpha=.25, label=f'Minimum {generate_latex_label("alpha")} searched')
+                ax.plot(3, alpha_range[-1], 'ro', alpha=.25, label=f'Maximum {generate_latex_label("alpha")} searched')
+                if row_i == 0:
+                    ax.set_title(model_name, fontsize=7)
+                if column_i == 0:
+                    ax.set_ylabel(quantile_var)
+        figs.append(fig)
+    return figs
+
+
+def plot_quantile_by_voxel(quantile_df, voxel_names: Optional[List[str]] = None):
+    """Plots range of statistics. Generates one figure per voxel"""
+    figs = []
+    if voxel_names is None:
+        voxel_names = quantile_df['voxel_name'].unique()
+    for voxel_name in voxel_names:
+        smaller_data = quantile_df[quantile_df['voxel_name'] == voxel_name]
+        model_names = quantile_df['model_name'].unique()
+        fig, axes = plt.subplots(len(STATISTICS), len(model_names), sharey='row')
+        fig.suptitle(f'Voxel: {voxel_name}')
+        fig.supylabel(f'Statistic')
+        for row_i, (statistic_name, ax_row) in enumerate(zip(STATISTICS, axes)):
+            smaller_smaller_data = smaller_data[['model_name', 'quantile_variable', statistic_name]]
+            for column_i, (model_name, ax) in enumerate(zip(model_names, ax_row)):
+                data_to_plot = smaller_smaller_data[smaller_smaller_data['model_name'] == model_name].drop(
+                    columns=['model_name'])
+                data_to_plot.groupby('quantile_variable').boxplot(subplots=False, ax=ax, rot=45, showmeans=True)
+                labels = data_to_plot.groupby('quantile_variable').count().rename(
+                    index={'beta': '$\\beta$', 'correlation_coefficient': 'R', 'residual_variance': 'res_var'}
+                ).index.tolist()
+                ax.set_xticklabels(labels, fontsize=7)
+                if row_i == 0:
+                    ax.set_title(model_name, fontsize=7)
+                if column_i == 0:
+                    ax.set_ylabel(statistic_name, fontsize=7)
+        figs.append(fig)
+    return figs
+
+
+def plot_quantile_by_model(quantile_df, model_names: Optional[List[str]] = None):
+    """Plots range of statistics. Generates one figure per model"""
+    figs = []
+    if model_names is None:
+        model_names = quantile_df['model_name'].unique()
+    for model_name in model_names:
+        smaller_data = quantile_df[quantile_df['model_name'] == model_name]
+        quantile_vars = smaller_data['quantile_variable'].unique()
+        fig, axes = plt.subplots(len(STATISTICS), len(quantile_vars), sharey='row')
+        fig.suptitle(f'Model: {model_name}')
+        for row_i, (statistic_name, ax_row) in enumerate(zip(STATISTICS, axes)):
+            smaller_smaller_data = smaller_data[['voxel_name', 'quantile_variable', statistic_name]]
+            for column_i, (quantile_name, ax) in enumerate(zip(quantile_vars, ax_row)):
+                data_to_plot = smaller_smaller_data[smaller_smaller_data['quantile_variable'] == quantile_name]
+                data_to_plot.groupby('voxel_name').boxplot(subplots=False, ax=ax, rot=45, showmeans=True)
+                labels = data_to_plot.groupby('voxel_name').count().index.tolist()
+                ax.set_xticklabels(labels, fontsize=7)
+                if row_i == 0:
+                    ax.set_title(quantile_name, fontsize=7)
+                if column_i == 0:
+                    ax.set_ylabel(statistic_name, fontsize=7)
+        figs.append(fig)
+    return figs
 
 
 def display_plot(plot_fn: Callable, *args, **kwargs) -> None:

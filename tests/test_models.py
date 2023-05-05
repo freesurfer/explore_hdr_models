@@ -14,12 +14,9 @@ PLOT = False
 
 class TestHemodynamicResponseWithoutNans:
 
-    model = CanonicalHemodynamicModel(
-        eeg=load_test_eeg_without_nans(sample_frequency=20),
-        fmri=load_simulated_raw_fmri(tr=800),
-        name='test_name',
-        hemodynamic_response_window=30,
-        display_plot=False)
+    model = CanonicalHemodynamicModel(eeg=load_test_eeg_without_nans(sample_frequency=20),
+                                      fmri=load_simulated_raw_fmri(tr=800), name='test_name',
+                                      hemodynamic_response_window=30, display_plot=False)
     delta = 2.25
     tau = 1.25
     alpha = 2
@@ -42,10 +39,6 @@ class TestHemodynamicResponseWithoutNans:
 
 class TestHemodynamicResponseWithNans(TestHemodynamicResponseWithoutNans):
 
-    model = CanonicalHemodynamicModel(
-        eeg=load_test_eeg_with_nans(sample_frequency=20),
-        fmri=load_simulated_raw_fmri(tr=800),
-        name='test_hdr',
-        hemodynamic_response_window=30,
-        display_plot=False
-    )
+    model = CanonicalHemodynamicModel(eeg=load_test_eeg_with_nans(sample_frequency=20),
+                                      fmri=load_simulated_raw_fmri(tr=800), name='test_hdr',
+                                      hemodynamic_response_window=30, display_plot=False)

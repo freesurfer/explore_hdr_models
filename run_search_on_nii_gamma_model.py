@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
     models = {}
     for search_type in args.search_type:
-        models[search_type] = SEARCH_TYPES[search_type](
+        models[search_type] = SEARCH_TYPES[search_type]['model'](
             eeg,
             fMRIData(fmri_voxel_data, args.tr, fmri_voxel_names),
             args.out_name,

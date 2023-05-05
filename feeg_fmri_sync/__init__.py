@@ -6,7 +6,9 @@ from feeg_fmri_sync.simulations import (
 )
 from feeg_fmri_sync.models import (
     CanonicalHemodynamicModel,
-    VectorizedSumEEGHemodynamicModel
+    GaussianFilterHemodynamicModel,
+    HemodynamicModelSumEEG,
+    SavgolFilterHemodynamicModel
 )
 
 
@@ -16,9 +18,17 @@ SEARCH_TYPES = {
         'simulation_generator': generate_downsampled_simulated_fmri,
     },
     'classic_hemodynamic_sum': {
-        'model': VectorizedSumEEGHemodynamicModel,
+        'model': HemodynamicModelSumEEG,
         'simulation_generator': generate_summed_simulated_fmri,
     },
+    'classic_hemodynamic_gaussian_filter': {
+        'model': GaussianFilterHemodynamicModel,
+        'simulation_generator': generate_downsampled_simulated_fmri,
+    },
+    'classic_hemodynamic_savgol_filter': {
+        'model': SavgolFilterHemodynamicModel,
+        'simulation_generator': generate_downsampled_simulated_fmri,
+    }
 }
 
 VALID_KWARGS = [

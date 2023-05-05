@@ -3,15 +3,18 @@ import pathlib
 import re
 from abc import ABCMeta
 from configparser import ConfigParser
-from typing import List, Dict, Generator, Optional, Type, TypeVar
+from typing import List, Dict, Generator, Optional, Type, TypeVar, Any
 
-from submission.parse_config import get_config_section, get_config_subsection_variable, \
-    get_values_for_section_ignoring_defaults, get_items_for_section_ignoring_defaults
+from submission.parse_config import (
+    get_config_section,
+    get_config_subsection_variable,
+    get_items_for_section_ignoring_defaults
+)
 from submission.script_writers import ScriptWriter, IterativeScriptWriter
 from feeg_fmri_sync.utils import get_fmri_filepaths, get_i_for_subj_and_run
 
 
-class HDRSearch(ScriptWriter, metaclass=ABCMeta):
+class HDRSearch(IterativeScriptWriter, metaclass=ABCMeta):
     type_str: str
     lookup_str: str
 
@@ -57,12 +60,13 @@ class SearchScriptWriter(IterativeScriptWriter):
         self.verbose = config.getboolean(self.hdr_analysis.lookup_str, 'verbose', fallback=False)
         self.par_network = par_network
 
-    def get_lines_for_identifier(self, identifier) -> List[str]:
+    def get_lines_for_identifier(self, identifier: Any) -> List[str]:
+        fmri_file_identifier, hdr_analysis_identifier = identifier
         lines = [f'time python {self.fmri_files.script_path} \\',
                  f'\t--par-file={self.par_file} \\',
-                 f'\t--out-dir={self.out_dir}/{self.fmri_files.get_str_for_identifier(identifier)} \\']
-        lines.extend([f'\t{line} \\' for line in self.fmri_files.get_lines_for_identifier(identifier)])
-        lines.extend([f'\t{line} \\' for line in self.hdr_analysis.get_lines()])
+                 f'\t--out-dir={self.out_dir}/{self.fmri_files.get_str_for_identifier(fmri_file_identifier)} \\']
+        lines.extend([f'\t{line} \\' for line in self.fmri_files.get_lines_for_identifier(fmri_file_identifier)])
+        lines.extend([f'\t{line} \\' for line in self.hdr_analysis.get_lines_for_identifier(fmri_file_identifier)])
         if self.verbose:
             lines.append('\t--verbose \\')
         if self.par_network:
@@ -72,8 +76,9 @@ class SearchScriptWriter(IterativeScriptWriter):
         lines.append(f'\t--out-name={out_name}')
         return lines
 
-    def get_identifiers(self) -> Generator[int, None, None]:
-        yield self.fmri_files.get_identifiers()
+    def get_identifiers(self) -> Generator[Any, None, None]:
+        for fmri_file_identifier in self.fmri_files.get_identifiers():
+            yield fmri_file_identifier, self.hdr_analysis.get_identifiers()
 
 
 class GammaCanonicalHDR(HDRSearch):
@@ -81,14 +86,30 @@ class GammaCanonicalHDR(HDRSearch):
     lookup_str = f'modeling-type.{type_str}'
 
     def __init__(self, config):
-        self.search_variables = get_items_for_section_ignoring_defaults(config, self.lookup_str)
-        self.search_types = get_values_for_section_ignoring_defaults(config, f'{self.lookup_str}.search-type')
+        search_variables = get_items_for_section_ignoring_defaults(config, self.lookup_str)
+        self.search_variables = {}
+        search_types = {}
+        for varname, variable in search_variables:
+            if varname == 'search-types':
+                for search_type in variable.strip().split(','):
+                    search_type = search_type.strip()
+                    search_types[search_type] = get_items_for_section_ignoring_defaults(
+                        config, f'{self.lookup_str}.{search_type}'
+                    )
+            else:
+                self.search_variables[varname] = variable
+        self.search_types = search_types
 
-    def get_lines(self) -> List[str]:
-        lines = [f'--search-type={search_type}' for search_type in self.search_types]
-        for varname, variable in self.search_variables:
+    def get_lines_for_identifier(self, identifier: Any) -> List[str]:
+        specific_search_variables = self.search_types[identifier]
+        lines = [f'--{varname}={variable}' for varname, variable in self.search_variables]
+        for varname, variable in specific_search_variables:
             lines.append(f'--{varname}={variable}')
         return lines
+
+    def get_identifiers(self) -> Generator[Any, None, None]:
+        for key in self.search_types.keys():
+            yield key
 
 
 class NiiFMRIFiles(FMRIFiles):

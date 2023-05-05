@@ -85,9 +85,14 @@ def fit_glm(est_fmri: fMRIData, actual_fmri: fMRIData) -> Tuple[npt.NDArray, npt
     return beta, residual, residual_variance, degrees_of_freedom
 
 
-def get_contrast_matrix() -> npt.NDArray:
+def get_b1_contrast_matrix() -> npt.NDArray:
     """Return contrast matrix to convert beta into a 1D array that applies to X, not the constant"""
     return np.array([0, 1])
+
+
+def get_b0_contrast_matrix() -> npt.NDArray:
+    """Return contrast matrix to convert beta into a 1D array that applies to the constant, not X"""
+    return np.array([1, 0])
 
 
 def get_hdr_for_eeg(eeg_data: npt.NDArray, hdr: npt.NDArray) -> npt.NDArray:

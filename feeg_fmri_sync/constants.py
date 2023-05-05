@@ -15,6 +15,8 @@ FMRI_DIR = 'HDRshape'
 
 NUMBER_OF_TASKS = 500
 
+STATISTICS = ('beta_0', 'beta', 'residual_variance', 'correlation_coefficient', 'pearsons_statistic', 'pearsons_pvalue')
+
 EEGData = namedtuple('EEGData', ['data', 'sample_frequency'])
 
 PLOT_DELTA = 2.25
@@ -56,8 +58,9 @@ class fMRIData:
     def is_single_voxel(self) -> bool:
         return len(self.data.shape) < 2
 
-    @staticmethod
-    def get_voxel_axis() -> int:
+    def get_voxel_axis(self) -> int:
+        if self.is_single_voxel():
+            warnings.warn('Asked to get voxel axis of single voxel fMRI')
         return 0
 
     def get_tr_axis(self) -> int:
