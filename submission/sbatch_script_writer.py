@@ -34,7 +34,11 @@ class WriteSubmissionSh:
         ]
 
     def get_identifiers(self) -> Generator[Any, None, None]:
-        yield self.script_setup.get_identifiers()
+        for identifier in self.script_setup.get_identifiers():
+            yield identifier
+
+    def get_identifier_string(self, identifier) -> str:
+        return self.script_setup.get_str_for_identifier(identifier)
 
     def write_file(self, identifier: Any, out_name: str) -> str:
         lines = ['#!/bin/bash']

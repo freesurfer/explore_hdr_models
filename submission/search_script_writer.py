@@ -1,3 +1,4 @@
+import itertools
 import os
 import pathlib
 import re
@@ -66,20 +67,22 @@ class SearchScriptWriter(IterativeScriptWriter):
                  f'\t--par-file={self.par_file} \\',
                  f'\t--out-dir={self.out_dir}/{self.fmri_files.get_str_for_identifier(fmri_file_identifier)} \\']
         lines.extend([f'\t{line} \\' for line in self.fmri_files.get_lines_for_identifier(fmri_file_identifier)])
-        lines.extend([f'\t{line} \\' for line in self.hdr_analysis.get_lines_for_identifier(fmri_file_identifier)])
+        lines.extend([f'\t{line} \\' for line in self.hdr_analysis.get_lines_for_identifier(hdr_analysis_identifier)])
         if self.verbose:
             lines.append('\t--verbose \\')
         if self.par_network:
-            out_name = f'{self.fmri_files.get_out_name(identifier)}_{self.par_network}'
+            out_name = f'{self.fmri_files.get_out_name(fmri_file_identifier)}_{self.par_network}'
         else:
-            out_name = self.fmri_files.get_out_name(identifier)
+            out_name = self.fmri_files.get_out_name(fmri_file_identifier)
         lines.append(f'\t--out-name={out_name}')
         return lines
 
     def get_identifiers(self) -> Generator[Any, None, None]:
-        for fmri_file_identifier in self.fmri_files.get_identifiers():
-            for hdr_search_identifier in self.hdr_analysis.get_identifiers():
-                yield fmri_file_identifier, hdr_search_identifier
+        for identifiers in itertools.product(self.fmri_files.get_identifiers(), self.hdr_analysis.get_identifiers()):
+            yield identifiers
+
+    def get_str_for_identifier(self, identifier) -> str:
+        
 
 
 class GammaCanonicalHDR(HDRSearch):
@@ -103,7 +106,7 @@ class GammaCanonicalHDR(HDRSearch):
 
     def get_lines_for_identifier(self, identifier: Any) -> List[str]:
         specific_search_variables = self.search_types[identifier]
-        lines = [f'--{varname}={variable}' for varname, variable in self.search_variables]
+        lines = [f'--{varname}={variable}' for varname, variable in self.search_variables.items()]
         for varname, variable in specific_search_variables:
             lines.append(f'--{varname}={variable}')
         return lines
