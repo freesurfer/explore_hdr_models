@@ -81,8 +81,9 @@ class SearchScriptWriter(IterativeScriptWriter):
         for identifiers in itertools.product(self.fmri_files.get_identifiers(), self.hdr_analysis.get_identifiers()):
             yield identifiers
 
-    def get_str_for_identifier(self, identifier) -> str:
-        
+    @staticmethod
+    def get_str_for_identifier(identifier) -> str:
+        return identifier[1]
 
 
 class GammaCanonicalHDR(HDRSearch):

@@ -123,11 +123,12 @@ if __name__ == '__main__':
                 )
                 submission_sh_file_writer = WriteSubmissionSh(submission_header_writer, search_script_writer, conda_env)
                 for identifier in submission_sh_file_writer.get_identifiers():
-                    job_name_to_out_file_paths[f'{network}_{subject}_r{run}'] = (
+                    search_type = submission_sh_file_writer.get_identifier_string(identifier)
+                    job_name_to_out_file_paths[f'{network}_{subject}_r{run}_search_{search_type}'] = (
                         submission_sh_file_writer,
                         submission_sh_file_writer.write_file(
                             identifier,
-                            os.path.join(root_dir, script_out_dir, f'{network}_{subject}_r{run}_sbatch_script.sh')
+                            os.path.join(root_dir, script_out_dir, f'{network}_{subject}_r{run}_search_{search_type}_script.sh')
                         ))
     if not args.only_files:
         processes = []
