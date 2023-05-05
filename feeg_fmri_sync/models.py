@@ -134,8 +134,8 @@ class CanonicalHemodynamicModel:
         plt.figure()
         time_steps_for_eeg = np.arange(len(self.eeg.data)) / self.eeg.sample_frequency
         plt.plot(time_steps_for_eeg, self.eeg.data, label='EEG spikes', alpha=0.25)
-        plt.plot(time_steps_for_eeg, est_fmri, label='Original estimated fMRI')
-        plt.plot(time_steps_for_eeg, transformed_est_fmri, label='Transformed estimated fMRI')
+        plt.plot(time_steps_for_eeg, est_fmri, label='Original estimated fMRI', alpha=0.5)
+        plt.plot(time_steps_for_eeg, transformed_est_fmri, label='Transformed estimated fMRI', alpha=0.5)
         plt.title(f'Estimated fMRI HDR from EEG spikes before and after transformation \n'
                   f'using model={self.name}, {self.get_param_str()}')
         plt.legend()
@@ -153,11 +153,11 @@ class CanonicalHemodynamicModel:
         time_steps_for_eeg = np.arange(len(self.eeg.data)) / self.eeg.sample_frequency
         time_steps_for_fmri = time_steps_for_eeg[::self.r_fmri]
         if time_steps_for_fmri.size != actual_fmri.size:
-            plt.plot(np.arange(actual_fmri.size), actual_fmri, label='Actual fMRI')
-            plt.plot(np.arange(actual_fmri.size), transformed_fmri, label=transformation_str)
+            plt.plot(np.arange(actual_fmri.size), actual_fmri, label='Actual fMRI', alpha=0.5)
+            plt.plot(np.arange(actual_fmri.size), transformed_fmri, label=transformation_str, alpha=0.5)
         else:
-            plt.plot(time_steps_for_fmri, actual_fmri, label='Actual fMRI')
-            plt.plot(time_steps_for_fmri, transformed_fmri, label=transformation_str)
+            plt.plot(time_steps_for_fmri, actual_fmri, label='Actual fMRI', alpha=0.5)
+            plt.plot(time_steps_for_fmri, transformed_fmri, label=transformation_str, alpha=0.5)
 
         if not actual_fmri_name:
             title = f'{transformation_str} compared with actual fMRI using \n' \
@@ -187,8 +187,8 @@ class CanonicalHemodynamicModel:
             if p_value and not np.isnan(p_value):
                 xlabel = f'{xlabel}, Pvalue={p_value:.6f}'
             plt.xlabel(xlabel)
-        plt.plot(time_steps_for_fmri, actual_fmri, label='Actual fMRI')
-        plt.plot(time_steps_for_fmri, est_fmri, label='Estimated fMRI')
+        plt.plot(time_steps_for_fmri, actual_fmri, label='Actual fMRI', alpha=0.5)
+        plt.plot(time_steps_for_fmri, est_fmri, label='Estimated fMRI', alpha=0.5)
 
         if not actual_fmri_name:
             title = f'Estimated fMRI HDR from EEG spikes compared with actual fMRI using \n' \
