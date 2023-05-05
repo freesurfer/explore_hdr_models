@@ -152,8 +152,12 @@ class CanonicalHemodynamicModel:
             transformation_str = 'Transformed fMRI'
         time_steps_for_eeg = np.arange(len(self.eeg.data)) / self.eeg.sample_frequency
         time_steps_for_fmri = time_steps_for_eeg[::self.r_fmri]
-        plt.plot(time_steps_for_fmri, actual_fmri, label='Actual fMRI')
-        plt.plot(time_steps_for_fmri, transformed_fmri, label=transformation_str)
+        if time_steps_for_fmri.size != actual_fmri.size:
+            plt.plot(np.arange(actual_fmri.size), actual_fmri, label='Actual fMRI')
+            plt.plot(np.arange(actual_fmri.size), transformed_fmri, label=transformation_str)
+        else:
+            plt.plot(time_steps_for_fmri, actual_fmri, label='Actual fMRI')
+            plt.plot(time_steps_for_fmri, transformed_fmri, label=transformation_str)
 
         if not actual_fmri_name:
             title = f'{transformation_str} compared with actual fMRI using \n' \
