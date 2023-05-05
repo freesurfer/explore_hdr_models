@@ -78,7 +78,8 @@ class SearchScriptWriter(IterativeScriptWriter):
 
     def get_identifiers(self) -> Generator[Any, None, None]:
         for fmri_file_identifier in self.fmri_files.get_identifiers():
-            yield fmri_file_identifier, self.hdr_analysis.get_identifiers()
+            for hdr_search_identifier in self.hdr_analysis.get_identifiers():
+                yield fmri_file_identifier, hdr_search_identifier
 
 
 class GammaCanonicalHDR(HDRSearch):
