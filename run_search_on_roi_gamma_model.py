@@ -152,7 +152,7 @@ if __name__ == '__main__':
         for i, (indexer_name, indexer_values) in enumerate(indexers):
             out_name = f'{i}_key_{indexer_name}_for_{os.path.basename(args.mat_file).split(".")[0]}' \
                        f'_sub{args.sub_and_run_i}.csv'
-            np.savetxt(os.path.join(args.out_dir, out_name), indexer_values, delimiter=",")
+            np.savetxt(os.path.join(args.out_dir, out_name), indexer_values, delimiter=",", fmt="%s")
 
     else:
         descriptions, df = search_voxels(models, delta_range, tau_range, alpha_range, args.verbose)
