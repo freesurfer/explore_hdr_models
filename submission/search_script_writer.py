@@ -6,10 +6,11 @@ from abc import ABCMeta
 from configparser import ConfigParser
 from typing import List, Dict, Generator, Optional, Type, TypeVar, Any
 
+from feeg_fmri_sync.constants import HEMODYNAMIC_MODEL_KEYS, SEARCH_KEYS
 from submission.parse_config import (
     get_config_section,
     get_config_subsection_variable,
-    get_items_for_section_ignoring_defaults
+    get_items_for_section_ignoring_defaults, get_items_for_section_given_keys
 )
 from submission.script_writers import ScriptWriter, IterativeScriptWriter
 from feeg_fmri_sync.utils import get_fmri_filepaths, get_i_for_subj_and_run
@@ -89,17 +90,18 @@ class SearchScriptWriter(IterativeScriptWriter):
 class GammaCanonicalHDR(HDRSearch):
     type_str = 'gamma-canonical-hdr'
     lookup_str = f'modeling-type.{type_str}'
+    search_section_keys = HEMODYNAMIC_MODEL_KEYS
 
     def __init__(self, config):
-        search_variables = get_items_for_section_ignoring_defaults(config, self.lookup_str)
+        search_variables = get_items_for_section_given_keys(config, self.lookup_str, SEARCH_KEYS)
         self.search_variables = {}
         search_types = {}
         for varname, variable in search_variables:
             if varname == 'search-types':
                 for search_type in variable.strip().split(','):
                     search_type = search_type.strip()
-                    search_types[search_type] = get_items_for_section_ignoring_defaults(
-                        config, f'{self.lookup_str}.{search_type}'
+                    search_types[search_type] = get_items_for_section_given_keys(
+                        config, f'{self.lookup_str}.{search_type}', HEMODYNAMIC_MODEL_KEYS + ['search-type']
                     )
             else:
                 self.search_variables[varname] = variable

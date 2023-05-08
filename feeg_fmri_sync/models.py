@@ -32,7 +32,8 @@ class CanonicalHemodynamicModel:
 
     def __init__(self, eeg: EEGData, fmri: fMRIData, name: str, n_trs_skipped_at_beginning: int = 1,
                  hemodynamic_response_window: float = 30, display_plot: bool = True,
-                 save_plot_dir: Optional[str] = None, standardize: bool = False, **kwargs):
+                 save_plot_dir: Optional[str] = None, standardize_est_fmri: bool = False,
+                 standardize_input_fmri: bool = False, **kwargs):
         # Data
         self.eeg: EEGData = eeg
         self.raw_fmri: fMRIData = fmri
@@ -60,11 +61,12 @@ class CanonicalHemodynamicModel:
         self.est_fmri_n_trs: Optional[int] = None
 
         # z-scoring and filtering setup
-        self.standardize = standardize
+        self.standardize_input_fmri = standardize_input_fmri
+        self.standardize_est_fmri = standardize_est_fmri
         self.fmri = self.standardize_actual_fmri(fmri.data)
 
     def standardize_actual_fmri(self, input_data: npt.NDArray) -> fMRIData:
-        if self.standardize:
+        if self.standardize_input_fmri:
             standardized_data = zscore(input_data, axis=self.raw_fmri.get_tr_axis(), nan_policy='omit')
             standardized_fmri = fMRIData(standardized_data, self.raw_fmri.TR, self.raw_fmri.voxel_names)
             if self.plot_standardization:
@@ -213,7 +215,7 @@ class CanonicalHemodynamicModel:
     def get_est_fmri_hemodynamic_response(self,
                                           est_hemodynamic_response: npt.NDArray) -> Tuple[npt.NDArray, npt.NDArray]:
         hdr_to_eeg = get_hdr_for_eeg(self.eeg.data, est_hemodynamic_response)
-        if self.standardize:
+        if self.standardize_est_fmri:
             transformed_hdr_to_eeg = zscore(hdr_to_eeg, nan_policy='omit')
             est_fmri = downsample_hdr_for_eeg(self.r_fmri, transformed_hdr_to_eeg)
             if self.display_plot or self.save_plot_dir:
@@ -368,11 +370,12 @@ class HemodynamicModelSumEEG(CanonicalHemodynamicModel):
 class SavgolFilterHemodynamicModel(CanonicalHemodynamicModel):
     def __init__(self, eeg: EEGData, fmri: fMRIData, name: str, n_trs_skipped_at_beginning: int = 1,
                  hemodynamic_response_window: float = 30, display_plot: bool = True,
-                 save_plot_dir: Optional[str] = None, standardize: bool = False, savgol_filter_window_length: int = 5,
+                 save_plot_dir: Optional[str] = None, standardize_est_fmri: bool = False,
+                 standardize_input_fmri: bool = False, savgol_filter_window_length: int = 5,
                  savgol_filter_polyorder: int = 5, **kwargs):
         self.plot_standardization = False
         super().__init__(eeg, fmri, name, n_trs_skipped_at_beginning, hemodynamic_response_window, display_plot,
-                         save_plot_dir, standardize)
+                         save_plot_dir, standardize_est_fmri, standardize_input_fmri)
         self.plot_standardization = True
         self.savgol_filter_window_length = savgol_filter_window_length
         self.savgol_filter_polyorder = savgol_filter_polyorder
@@ -408,11 +411,12 @@ class SavgolFilterHemodynamicModel(CanonicalHemodynamicModel):
 class GaussianFilterHemodynamicModel(CanonicalHemodynamicModel):
     def __init__(self, eeg: EEGData, fmri: fMRIData, name: str, n_trs_skipped_at_beginning: int = 1,
                  hemodynamic_response_window: float = 30, display_plot: bool = True,
-                 save_plot_dir: Optional[str] = None, standardize: bool = False, gaussian_filter_sigma: float = 5,
+                 save_plot_dir: Optional[str] = None, standardize_est_fmri: bool = False,
+                 standardize_input_fmri: bool = False, gaussian_filter_sigma: float = 5,
                  **kwargs):
         self.plot_standardization = False
         super().__init__(eeg, fmri, name, n_trs_skipped_at_beginning, hemodynamic_response_window, display_plot,
-                         save_plot_dir, standardize)
+                         save_plot_dir, standardize_est_fmri, standardize_input_fmri)
         self.plot_standardization = True
         self.gaussian_filter_sigma = gaussian_filter_sigma
         self.gaussian_filter_kwargs = {}

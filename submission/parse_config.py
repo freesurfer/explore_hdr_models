@@ -30,6 +30,17 @@ def get_items_for_section_ignoring_defaults(config: ConfigParser, section: str) 
         retlist.append((key, value))
     return retlist
 
+
+def get_items_for_section_given_keys(config: ConfigParser, section: str,
+                                     keys_to_extract: List[str]) -> List[Tuple[str, str]]:
+    retlist = []
+    for key, value in get_config_section(config, section).items():
+        if key not in keys_to_extract:
+            continue
+        retlist.append((key, value))
+    return retlist
+
+
 def get_root(config: ConfigParser, location: Optional[str]) -> str:
     if location:
         return get_config_subsection_variable(config, 'root-dir', f'location.{location}')

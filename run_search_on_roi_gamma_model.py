@@ -24,7 +24,7 @@ import pandas as pd
 import scipy
 
 from feeg_fmri_sync import SEARCH_TYPES
-from feeg_fmri_sync.constants import PLOT_ALPHA, PLOT_DELTA, PLOT_TAU
+from feeg_fmri_sync.constants import PLOT_ALPHA, PLOT_DELTA, PLOT_TAU, HEMODYNAMIC_MODEL_KEYS
 from feeg_fmri_sync.io import load_roi_from_mat
 from feeg_fmri_sync.constants import EEGData, fMRIData
 from feeg_fmri_sync.plotting import (
@@ -68,7 +68,8 @@ parser.add_argument('--alpha-step', type=float, default=0.05)
 
 # Search Type
 parser.add_argument('--search-type', default='classic_hemodynamic', choices=SEARCH_TYPES.keys())
-parser.add_argument('--standardize', action='store_true')
+parser.add_argument('--standardize-est-fmri', action='store_true')
+parser.add_argument('--standardize-actual-fmri', action='store_true')
 parser.add_argument('--hemodynamic-response-window', type=float, default=30)
 parser.add_argument('--savgol-filter-window-length', type=int, default=5)
 parser.add_argument('--savgol-filter-polyorder', type=int, default=5)
@@ -76,9 +77,6 @@ parser.add_argument('--deriv', type=int)
 parser.add_argument('--delta', type=float)
 parser.add_argument('--mode', type=str)
 parser.add_argument('--cval', type=float)
-
-SEARCH_KWARG_NAMES = ['hemodynamic_response_window', 'savgol_filter_window_length', 'savgol_filter_polyorder', 'deriv',
-                      'delta', 'mode', 'cval']
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -97,14 +95,13 @@ if __name__ == '__main__':
     tau_range = np.arange(args.tau_start, args.tau_end + args.tau_step, step=args.tau_step)
     alpha_range = np.arange(args.alpha_start, args.alpha_end + args.alpha_step, step=args.alpha_step)
 
-    search_kwargs = {kn: kv for kn, kv in vars(args).items() if kn in SEARCH_KWARG_NAMES}
+    search_kwargs = {kn: kv for kn, kv in vars(args).items() if kn in HEMODYNAMIC_MODEL_KEYS}
     models = {f'{args.search_type}_{args.out_name}': SEARCH_TYPES[args.search_type]['model'](
         eeg,
         fMRIData(fmri_voxel_data, args.tr, fmri_voxel_names),
         args.out_name,
         args.num_trs_skipped_at_beginning,
         display_plot=False,
-        standardize=args.standardize,
         **search_kwargs
     )}
     # Create a model to plot actual fMRI vs estimated
@@ -115,7 +112,6 @@ if __name__ == '__main__':
         args.num_trs_skipped_at_beginning,
         display_plot=False,
         save_plot_dir=args.out_dir,
-        standardize=args.standardize,
         **search_kwargs
     )
     # Save plot of how the variables change relating to each other across the search space
