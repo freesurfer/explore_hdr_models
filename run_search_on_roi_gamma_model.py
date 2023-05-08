@@ -69,7 +69,7 @@ parser.add_argument('--alpha-step', type=float, default=0.05)
 # Search Type
 parser.add_argument('--search-type', default='classic_hemodynamic', choices=SEARCH_TYPES.keys())
 parser.add_argument('--standardize-est-fmri', action='store_true')
-parser.add_argument('--standardize-actual-fmri', action='store_true')
+parser.add_argument('--standardize-input-fmri', action='store_true')
 parser.add_argument('--hemodynamic-response-window', type=float, default=30)
 parser.add_argument('--savgol-filter-window-length', type=int, default=5)
 parser.add_argument('--savgol-filter-polyorder', type=int, default=5)

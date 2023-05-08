@@ -90,10 +90,12 @@ class SearchScriptWriter(IterativeScriptWriter):
 class GammaCanonicalHDR(HDRSearch):
     type_str = 'gamma-canonical-hdr'
     lookup_str = f'modeling-type.{type_str}'
-    search_section_keys = HEMODYNAMIC_MODEL_KEYS
+    search_section_keys = SEARCH_KEYS
+    model_section_keys = ['-'.join(s.split('_')) for s in HEMODYNAMIC_MODEL_KEYS] + ['search-type']
+    boolean_flags = ['standardize-est-fmri', 'standardize-input-fmri', 'save-data-to-mat']
 
     def __init__(self, config):
-        search_variables = get_items_for_section_given_keys(config, self.lookup_str, SEARCH_KEYS)
+        search_variables = get_items_for_section_given_keys(config, self.lookup_str, self.search_section_keys)
         self.search_variables = {}
         search_types = {}
         for varname, variable in search_variables:
@@ -101,7 +103,7 @@ class GammaCanonicalHDR(HDRSearch):
                 for search_type in variable.strip().split(','):
                     search_type = search_type.strip()
                     search_types[search_type] = get_items_for_section_given_keys(
-                        config, f'{self.lookup_str}.{search_type}', HEMODYNAMIC_MODEL_KEYS + ['search-type']
+                        config, f'{self.lookup_str}.{search_type}', self.model_section_keys
                     )
             else:
                 self.search_variables[varname] = variable
@@ -109,9 +111,14 @@ class GammaCanonicalHDR(HDRSearch):
 
     def get_lines_for_identifier(self, identifier: Any) -> List[str]:
         specific_search_variables = self.search_types[identifier]
-        lines = [f'--{varname}={variable}' for varname, variable in self.search_variables.items()]
+        lines = []
+        for varname, variable in self.search_variables.items():
+            if varname in self.boolean_flags:
+                lines.append(f'--{varname}')
+            else:
+                lines.append(f'--{varname}={variable}')
         for varname, variable in specific_search_variables:
-            if varname in ['standardize', 'save-data-to-mat']:
+            if varname in self.boolean_flags:
                 lines.append(f'--{varname}')
             else:
                 lines.append(f'--{varname}={variable}')
