@@ -115,7 +115,7 @@ class GammaCanonicalHDR(HDRSearch):
                         if model_varname in self.boolean_flags:
                             model_kwargs_to_save.append(
                                 (model_varname,
-                                 get_config_subsection_boolean(config, varname, f'{self.lookup_str}.{search_type}'))
+                                 get_config_subsection_boolean(config, model_varname, f'{self.lookup_str}.{search_type}'))
                             )
                         else:
                             model_kwargs_to_save.append((model_varname, model_variable))
