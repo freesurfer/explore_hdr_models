@@ -97,7 +97,7 @@ class GammaCanonicalHDR(HDRSearch):
     lookup_str = f'modeling-type.{type_str}'
     search_section_keys = SEARCH_KEYS
     model_section_keys = ['-'.join(s.split('_')) for s in HEMODYNAMIC_MODEL_KEYS] + ['search-type']
-    boolean_flags = ['standardize-est-fmri', 'standardize-input-fmri', 'save-data-to-mat']
+    boolean_flags = ['standardize-est-fmri', 'standardize-input-fmri', 'save-data-to-mat', 'get-significance']
 
     def __init__(self, config):
         search_variables = get_items_for_section_given_keys(config, self.lookup_str, self.search_section_keys)

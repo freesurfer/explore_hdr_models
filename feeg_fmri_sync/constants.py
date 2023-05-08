@@ -24,7 +24,7 @@ PLOT_TAU = 1.25
 PLOT_ALPHA = 2
 
 SEARCH_KEYS = ['search-types', 'delta-start', 'delta-end', 'delta-step', 'tau-start', 'tau-end', 'tau-step',
-               'alpha-start', 'alpha-end', 'alpha-step', 'save-data-to-mat']
+               'alpha-start', 'alpha-end', 'alpha-step', 'save-data-to-mat', 'get-significance']
 
 HEMODYNAMIC_MODEL_KEYS = ['standardize_est_fmri', 'standardize_input_fmri', 'hemodynamic_response_window',
                           'savgol_filter_window_length', 'savgol_filter_polyorder', 'deriv',
