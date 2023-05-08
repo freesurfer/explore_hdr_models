@@ -134,7 +134,7 @@ if __name__ == '__main__':
 
         for v_i, variable_name in enumerate(variable_names):
             out_name = f'{variable_name}_search_on_' \
-                       f'{os.path.basename(args.mat_file).split(".")[0]}_sub{args.sub_and_run_i}.mat'
+                       f'{os.path.basename(args.mat_file).split(".")[0]}_sub{args.sub_and_run_i}_{args.out_name}.mat'
             if args.verbose:
                 print(f'Writing {variable_name} search to {out_name}')
             scipy.io.savemat(
@@ -144,7 +144,7 @@ if __name__ == '__main__':
 
         for i, (indexer_name, indexer_values) in enumerate(indexers):
             out_name = f'{i}_key_{indexer_name}_for_{os.path.basename(args.mat_file).split(".")[0]}' \
-                       f'_sub{args.sub_and_run_i}.csv'
+                       f'_sub{args.sub_and_run_i}_{args.out_name}.csv'
             np.savetxt(os.path.join(args.out_dir, out_name), indexer_values, delimiter=",", fmt="%s")
 
     else:
