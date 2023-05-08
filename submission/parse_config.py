@@ -11,6 +11,12 @@ def get_config_subsection_variable(config: ConfigParser, varname: str, section: 
     return config.get(section, varname)
 
 
+def get_config_subsection_boolean(config: ConfigParser, varname: str, section: Optional[str] = None) -> str:
+    if not section:
+        section = config.sections()[0]
+    return config.getboolean(section, varname)
+
+
 def get_config_section(config: ConfigParser, section: str) -> SectionProxy:
     if section not in config:
         raise ValueError(f'Unable to locate section "{section}"')

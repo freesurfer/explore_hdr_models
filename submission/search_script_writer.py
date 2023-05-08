@@ -10,7 +10,7 @@ from feeg_fmri_sync.constants import HEMODYNAMIC_MODEL_KEYS, SEARCH_KEYS
 from submission.parse_config import (
     get_config_section,
     get_config_subsection_variable,
-    get_items_for_section_ignoring_defaults, get_items_for_section_given_keys
+    get_items_for_section_ignoring_defaults, get_items_for_section_given_keys, get_config_subsection_boolean
 )
 from submission.script_writers import ScriptWriter, IterativeScriptWriter
 from feeg_fmri_sync.utils import get_fmri_filepaths, get_i_for_subj_and_run
@@ -102,26 +102,44 @@ class GammaCanonicalHDR(HDRSearch):
             if varname == 'search-types':
                 for search_type in variable.strip().split(','):
                     search_type = search_type.strip()
-                    search_types[search_type] = get_items_for_section_given_keys(
+                    model_kwargs = get_items_for_section_given_keys(
                         config, f'{self.lookup_str}.{search_type}', self.model_section_keys
                     )
+                    model_kwargs_to_save = []
+                    for model_varname, model_variable in model_kwargs:
+                        if model_varname in self.boolean_flags:
+                            model_kwargs_to_save.append(
+                                (model_varname,
+                                 get_config_subsection_boolean(config, varname, f'{self.lookup_str}.{search_type}'))
+                            )
+                        else:
+                            model_kwargs_to_save.append((model_varname, model_variable))
+                    search_types[search_type] = model_kwargs_to_save
             else:
-                self.search_variables[varname] = variable
+                if varname in self.boolean_flags:
+                    self.search_variables[varname] = get_config_subsection_boolean(config, varname, self.lookup_str)
+                else:
+                    self.search_variables[varname] = variable
         self.search_types = search_types
+
+    def get_varname_variable(self, varname, variable):
+        if varname in self.boolean_flags:
+            if variable:
+                return f'--{varname}'
+            return None
+        return f'--{varname}={variable}'
 
     def get_lines_for_identifier(self, identifier: Any) -> List[str]:
         specific_search_variables = self.search_types[identifier]
         lines = []
         for varname, variable in self.search_variables.items():
-            if varname in self.boolean_flags:
-                lines.append(f'--{varname}')
-            else:
-                lines.append(f'--{varname}={variable}')
+            new_line = self.get_varname_variable(varname, variable)
+            if new_line:
+                lines.append(new_line)
         for varname, variable in specific_search_variables:
-            if varname in self.boolean_flags:
-                lines.append(f'--{varname}')
-            else:
-                lines.append(f'--{varname}={variable}')
+            new_line = self.get_varname_variable(varname, variable)
+            if new_line:
+                lines.append(new_line)
         return lines
 
     def get_identifiers(self) -> Generator[Any, None, None]:
