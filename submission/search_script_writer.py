@@ -19,6 +19,11 @@ from feeg_fmri_sync.utils import get_fmri_filepaths, get_i_for_subj_and_run
 class HDRSearch(IterativeScriptWriter, metaclass=ABCMeta):
     type_str: str
     lookup_str: str
+    out_name: str
+
+    @staticmethod
+    def get_out_name(identifier) -> str:
+        return identifier
 
 
 HDRSearch_subclass = TypeVar('HDRSearch_subclass', bound=HDRSearch)
@@ -75,7 +80,7 @@ class SearchScriptWriter(IterativeScriptWriter):
             out_name = f'{self.fmri_files.get_out_name(fmri_file_identifier)}_{self.par_network}'
         else:
             out_name = self.fmri_files.get_out_name(fmri_file_identifier)
-        lines.append(f'\t--out-name={out_name}')
+        lines.append(f'\t--out-name={out_name}_{self.hdr_analysis.get_out_name(hdr_analysis_identifier)}')
         return lines
 
     def get_identifiers(self) -> Generator[Any, None, None]:
