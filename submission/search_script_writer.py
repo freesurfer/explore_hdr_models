@@ -154,7 +154,7 @@ class GammaCanonicalHDR(HDRSearch):
 
 class NiiFMRIFiles(FMRIFiles):
     type_str = 'nii'
-    script_path = str(pathlib.Path(__file__).parent.with_name('run_search_on_nii_gamma_model.py').resolve())
+    script_path = str(pathlib.Path(__file__).parent.with_name('run_search_gamma_model.py').resolve())
     # TODO: decide about job-number and number-of-tasks
 
     def __init__(self, config: ConfigParser, subject: str, run: int, root_dir: str, **kwargs):
@@ -169,7 +169,7 @@ class NiiFMRIFiles(FMRIFiles):
             yield i
 
     def get_lines_for_identifier(self, fmri_i):
-        return [f'--nii-file={self.fmri_filenames[fmri_i]}']
+        return ['nii', f'--nii-file={self.fmri_filenames[fmri_i]}']
 
     def get_str_for_identifier(self, identifier) -> str:
         return re.search(r'fsrest_([lr]h)_native', self.fmri_filenames[identifier]).group(1)
@@ -177,7 +177,7 @@ class NiiFMRIFiles(FMRIFiles):
 
 class RoiFile(FMRIFiles):
     type_str = 'roi'
-    script_path = str(pathlib.Path(__file__).parent.with_name('run_search_on_roi_gamma_model.py').resolve())
+    script_path = str(pathlib.Path(__file__).parent.with_name('run_search_gamma_model.py').resolve())
 
     def __init__(self, config: ConfigParser, subject: str, run: int, root_dir: str,
                  all_subjects_list: List[str], **kwargs):
@@ -193,6 +193,7 @@ class RoiFile(FMRIFiles):
 
     def get_lines_for_identifier(self, ind):
         return [
+            f'roi',
             f'--mat-file={self.mat_file}',
             f'--sub-and-run-i={self.subj_and_run_i}'
         ]
