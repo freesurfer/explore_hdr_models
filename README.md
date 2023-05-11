@@ -119,6 +119,124 @@ Usage:
 ## Supported Hemodynamic Models
 Currently, all supported models are single
 
+### Filtering Options
+
+#### Savitzky-Golay Filter (Savgol Filter)
+Savitzky-Golay (Savgol) filtering is a digital signal processing technique used to smooth or differentiate a signal.
+It is particularly effective for removing noise or undesired fluctuations from a dataset. Savgol filtering operates 
+by fitting a series of polynomial functions to subsets of the data and using these polynomial fits to estimate the 
+smoothed or differentiated values.
+
+The main parameters in Savgol filtering are the window length and the polynomial order. The window length refers 
+to the number of adjacent data points considered for each polynomial fit. A larger window length incorporates more 
+points in the fitting process and results in a smoother output, but it may also blur or remove small-scale features 
+in the data. Conversely, a smaller window length captures more localized variations but may not effectively remove 
+noise or provide a smooth result.
+
+The polynomial order determines the complexity of the polynomial used to fit the data within each window. A higher 
+polynomial order allows for more intricate fitting, which can capture more complex trends in the data. However, 
+increasing the polynomial order can also lead to overfitting, where the filter amplifies noise or introduces 
+artificial oscillations. A lower polynomial order provides a simpler fit, but it may fail to capture detailed 
+variations in the signal.
+
+To apply Savgol filtering, the algorithm slides the window along the signal, fitting a polynomial of the specified 
+order to the points within the window. The polynomial coefficients are calculated using the least squares method,
+minimizing the sum of squared residuals between the fitted curve and the actual data. The central point of the window 
+is then replaced with the value obtained from evaluating the polynomial at that point. This process is repeated for 
+all points in the signal.
+
+It is important to note that Savgol filtering is a linear method and assumes that the signal is stationary within 
+each window. If the signal contains abrupt changes or non-stationary behavior, the filtering may introduce artifacts 
+or produce inaccurate results.
+
+In summary, Savgol filtering is a technique for smoothing or differentiating signals using polynomial fits within 
+moving windows. The window length and polynomial order are adjustable parameters that control the degree of smoothing 
+and the ability to capture signal features. Care should be taken in selecting appropriate values to achieve the desired 
+balance between noise removal and preserving important details in the data.
+
+##### Good Starting Parameters
+When applying Savgol filtering to fMRI data, the choice of filter parameters depends on the specific characteristics 
+of the data and the goals of the analysis. However, there are some commonly used starting parameters that can provide 
+a good starting point.
+
+For fMRI data, a typical __window length__ is often set to be around __5 to 15__ time points. This value represents the 
+number of consecutive time points that will be used to fit the polynomial within the sliding window. A larger window 
+length will result in a smoother output, but it may also attenuate or remove certain transient features in the data. A 
+smaller window length captures more localized variations but may not effectively remove noise.
+
+Regarding the __polynomial order__, a value of __2__ is frequently used as a starting point for fMRI data. This means 
+that a quadratic polynomial (2nd order) will be fitted to the data points within each window. A polynomial of higher 
+order can capture more complex trends, but it also carries a higher risk of overfitting and amplifying noise. A lower 
+polynomial order provides a simpler fit but may not capture subtle variations in the signal.
+
+It's important to note that these starting parameters may vary depending on the specific characteristics of your 
+fMRI data and the analysis objectives. It is recommended to experiment with different window lengths and polynomial 
+orders to find the optimal balance between noise reduction and preservation of relevant signal features. Additionally, 
+domain-specific knowledge and considerations, as well as the presence of any specific artifacts or noise sources in 
+your fMRI data, should also be taken into account when selecting filter parameters.
+
+#### Gaussian 1D Filter
+Gaussian 1D filtering is a common technique used in image processing and signal processing to smooth data along 
+one dimension. It applies a Gaussian kernel to the data, which is a bell-shaped curve defined by its mean (center) 
+and standard deviation (spread). The kernel is convolved with the input signal to produce the filtered output.
+
+The Gaussian kernel has the property of being symmetric and its shape is determined by the standard deviation. 
+A higher standard deviation results in a wider kernel and more smoothing, while a lower standard deviation produces 
+a narrower kernel and less smoothing. The mean of the Gaussian determines the center of the kernel.
+
+The order of Gaussian filtering refers to the number of times the filter is applied to the data. Each subsequent 
+application further smooths the data. Higher-order filtering can be useful in scenarios where more aggressive 
+smoothing is required or to eliminate finer details from the data. However, it is important to note that higher-order 
+filtering can also cause blurring and loss of important information, so the choice of order should be based on the 
+specific requirements of the application.
+
+The mode of Gaussian filtering refers to how the filter handles the boundary of the data. When applying the filter 
+to the edges of the data, there is a region where the filter extends beyond the available data. The mode determines 
+how this region is handled. Common modes include:
+
+* "Valid" mode: In this mode, the filter is only applied to the valid region where the entire kernel fits within 
+  the data. The output size is smaller than the input because the filter cannot be fully applied to the boundary 
+  pixels.
+* "Same" mode: In this mode, the filter is applied to the entire input signal, and the output size is the same as 
+  the input size. The filter extends beyond the boundaries by assuming zero-padding outside the input data.
+* "Wrap" mode: In this mode, the filter wraps around the data, treating the signal as if it were periodic. 
+  The output size is the same as the input size, and the filter is applied to the entire signal, including the 
+  boundary pixels.
+* "Reflect" mode: In this mode, the filter is applied to the entire input signal, and the boundary pixels are 
+  mirrored or reflected to handle the region beyond the boundaries. This mode helps to reduce artifacts that can 
+  occur with other modes.
+
+The choice of mode depends on the specific requirements of the application. "Valid" mode is often used when the 
+filtered output should have the same size as the valid region of the input. "Same" mode is commonly used when the 
+filtered output needs to have the same size as the input signal. "Wrap" and "reflect" modes are useful in situations
+where the signal exhibits periodic behavior or to reduce boundary effects.
+
+In summary, Gaussian 1D filtering involves convolving a Gaussian kernel with a one-dimensional signal to smooth 
+the data. The order of the filter determines the level of smoothing, while the mode determines how the filter 
+handles the boundary of the data.
+
+##### Good Starting Parameters
+When applying Gaussian 1D filtering to fMRI time courses, the choice of parameters depends on the specific 
+characteristics of the data and the desired level of smoothing. Here are some considerations to guide 
+parameter selection:
+* Standard Deviation (σ): The standard deviation of the Gaussian kernel determines the width of the kernel and, 
+  consequently, the amount of smoothing applied. A higher value of σ results in more smoothing, while a lower 
+  value preserves finer details. The optimal σ depends on the characteristics of the fMRI data, such as the voxel 
+  size and the underlying noise level. Common values for σ in fMRI analysis range from __2 to 6 seconds__. 
+* Order: The order of the Gaussian filter determines the number of times the filter is applied consecutively. 
+  Higher-order filtering provides more aggressive smoothing, but it can also introduce blurring and potentially 
+  remove important temporal details. The choice of order should be based on the specific requirements of the 
+  analysis. In many cases, a __first-order__ (single application) Gaussian filter is sufficient. 
+* Mode: The mode of filtering determines how the filter handles the boundary of the fMRI time course. The 
+  choice of mode depends on the specific requirements and characteristics of the data. "Same" mode is often used 
+  to maintain the same length as the input time course, while "Valid" mode can be useful when removing edge effects 
+  is a priority. "Reflect" and "Wrap" modes may be employed if there are periodic features in the time course or to 
+  minimize boundary artifacts.
+
+It is worth noting that the choice of parameters may require some experimentation and validation based on the specific 
+characteristics of the fMRI data and the analysis goals. It is recommended to evaluate the impact of different 
+parameter settings on the data and the subsequent analysis to ensure that the chosen parameters are appropriate for t
+he particular study or task.
 
 ## Warnings/Known Bugs
 
