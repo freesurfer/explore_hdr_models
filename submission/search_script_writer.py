@@ -73,7 +73,6 @@ class SearchScriptWriter(IterativeScriptWriter):
                  f'\t--par-file={self.par_file} \\',
                  f'\t--out-dir={self.out_dir}/{self.fmri_files.get_str_for_identifier(fmri_file_identifier)} \\']
         lines.extend([f'\t{line} \\' for line in self.hdr_analysis.get_lines_for_identifier(hdr_analysis_identifier)])
-        lines.extend([f'\t{line} \\' for line in self.fmri_files.get_lines_for_identifier(fmri_file_identifier)])
         if self.verbose:
             lines.append('\t--verbose \\')
         if self.par_network:
@@ -81,6 +80,7 @@ class SearchScriptWriter(IterativeScriptWriter):
         else:
             out_name = self.fmri_files.get_out_name(fmri_file_identifier)
         lines.append(f'\t--out-name={out_name}_{self.hdr_analysis.get_out_name(hdr_analysis_identifier)}')
+        lines.extend([f'\t{line} \\' for line in self.fmri_files.get_lines_for_identifier(fmri_file_identifier)])
         return lines
 
     def get_identifiers(self) -> Generator[Any, None, None]:
