@@ -185,6 +185,7 @@ if __name__ == '__main__':
         alpha_range,
     )
     if safe_to_be_computationally_expensive:
+        # Allows plots for each voxel; won't close until all voxels are done; opens too many plots
         # Create a model to plot actual fMRI vs estimated
         model_for_plotting = SEARCH_TYPES[args.search_type]['model'](
             eeg,
