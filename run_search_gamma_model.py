@@ -116,12 +116,12 @@ parser.add_argument('--cval', type=float)
 subparsers = parser.add_subparsers(required=True)
 mat_file_parser = subparsers.add_parser('roi')
 mat_file_parser.add_argument('--mat-file', required=True,
-                             help=f'ROI mat file path (must define X and subIndx as variables)')
+                             help=f'ROI mat file path (must define X and subIndx as variables)', default=None)
 mat_file_parser.add_argument('--sub-and-run-i', required=True, type=int,
-                             help='subIndx value in mat-file for eeg par file')
+                             help='subIndx value in mat-file for eeg par file', default=None)
 
 nii_file_parser = subparsers.add_parser('nii')
-nii_file_parser.add_argument('--nii-file', required=True, help=f'nii file path')
+nii_file_parser.add_argument('--nii-file', required=True, help=f'nii file path', default=None)
 # If the runtime on an entire nii file is too large, load_from_nii provides a way of chopping up a large
 #   nii file into subsets. These arguments should be uncommented and search_script_writer will need to be updated
 #nii_file_parser.add_argument('--job-number', default=None, type=int, help='Job number assigned by submit_from_config')
