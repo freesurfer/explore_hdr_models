@@ -1,5 +1,8 @@
 """
-Run grid search to find best fitting delta, tau, and alpha using the specified hemodynamic model.
+Run grid search to find best fitting delta, tau, and alpha using the specified hemodynamic model. Saves results to
+mat files and csvs.
+
+Generates QC plots if --max-voxels-safe-for-computation is higher than the number of voxels analyzed
 
 By default, uses canonical hemodynamic model:
     h(t>delta)  = ((t-delta)/tau)^alpha * exp(-(t-delta)/tau)
@@ -25,11 +28,8 @@ python run_search_gamma_model.py \
     --nii-file /autofs/space/ursa_004/users/HDRmodeling/HDRshape/s06_137/rest/fsrest_lh_native/res/res-001.nii.gz
 """
 import argparse
-import json
-
 import numpy as np
 import os
-import pandas as pd
 import scipy
 
 from feeg_fmri_sync import SEARCH_TYPES
@@ -37,11 +37,10 @@ from feeg_fmri_sync.constants import PLOT_ALPHA, PLOT_DELTA, PLOT_TAU, HEMODYNAM
 from feeg_fmri_sync.io import load_roi_from_mat, load_from_nii
 from feeg_fmri_sync.constants import EEGData, fMRIData
 from feeg_fmri_sync.plotting import (
-    plot_all_search_results_2d_on_diff_colormaps,
     plot_eeg_hdr_across_delta_tau_alpha_range,
     save_plot
 )
-from feeg_fmri_sync.search import search_voxels, analyze_best_fit_models, search_voxels_in_depth_without_df
+from feeg_fmri_sync.search import search_voxels_in_depth_without_df
 
 parser = argparse.ArgumentParser()
 
@@ -73,7 +72,6 @@ parser.add_argument('--num-trs-skipped-at-beginning', type=int, default=1)
 
 # Output info
 parser.add_argument('-v', '--verbose', action='store_true')
-parser.add_argument('--save-data-to-mat', action='store_true')
 parser.add_argument('--get-significance', action='store_true',
                     help='Calculate Pearson\'s Correlation Coefficient and corresponding p-value. '
                          'WARNING: Calculating the significance is very computationally expensive. '
@@ -193,69 +191,20 @@ if __name__ == '__main__':
         model_for_plotting.set_plot_voxels(fmri_voxel_names)
         model_for_plotting.score(PLOT_DELTA, PLOT_TAU, PLOT_ALPHA)
 
-    if args.save_data_to_mat:
-        data, variable_names, indexers = search_voxels_in_depth_without_df(models, delta_range, tau_range, alpha_range,
-                                                                           args.verbose, args.get_significance)
+    data, variable_names, indexers = search_voxels_in_depth_without_df(models, delta_range, tau_range, alpha_range,
+                                                                       args.verbose, args.get_significance)
 
-        for v_i, variable_name in enumerate(variable_names):
-            out_name = f'{variable_name}_search_on_' \
-                       f'{os.path.basename(args.mat_file).split(".")[0]}_sub{args.sub_and_run_i}_{args.out_name}.mat'
-            if args.verbose:
-                print(f'Writing {variable_name} search to {out_name}')
-            scipy.io.savemat(
-                os.path.join(args.out_dir, out_name),
-                {variable_name: data.take(v_i, axis=(len(data.shape) - 1))}
-            )
+    for v_i, variable_name in enumerate(variable_names):
+        out_name = f'{variable_name}_search_on_' \
+                   f'{os.path.basename(args.mat_file).split(".")[0]}_sub{args.sub_and_run_i}_{args.out_name}.mat'
+        if args.verbose:
+            print(f'Writing {variable_name} search to {out_name}')
+        scipy.io.savemat(
+            os.path.join(args.out_dir, out_name),
+            {variable_name: data.take(v_i, axis=(len(data.shape) - 1))}
+        )
 
-        for i, (indexer_name, indexer_values) in enumerate(indexers):
-            out_name = f'{i}_key_{indexer_name}_for_{os.path.basename(args.mat_file).split(".")[0]}' \
-                       f'_sub{args.sub_and_run_i}_{args.out_name}.csv'
-            np.savetxt(os.path.join(args.out_dir, out_name), indexer_values, delimiter=",", fmt="%s")
-
-    else:
-        descriptions, df = search_voxels(models, delta_range, tau_range, alpha_range, args.verbose)
-
-        for data_packet in analyze_best_fit_models(descriptions, models, args.out_dir):
-            (model_name, column, delta, tau, alpha, beta, _, residual_variance, dof, r,
-             pearsons_statistic, pearsons_pvalue) = data_packet
-            ret_dict = {
-                'model_name': model_name,
-                'column': str(column),
-                'delta': float(delta),
-                'tau': float(tau),
-                'alpha': float(alpha),
-                'beta': {
-                    'beta_0': float(beta[0][0]),
-                    'beta': float(beta[1][0])
-                },
-                'residual_variance': float(residual_variance),
-                'degrees_of_freedom': int(dof),
-                'correlation_coefficient': float(r),
-                'pearsons_statistic': float(pearsons_statistic),
-                'pearsons_pvalue': float(pearsons_pvalue)
-            }
-
-            out_name = f'{model_name}_best_fit' \
-                       f'{os.path.basename(args.mat_file).split(".")[0]}_sub-{args.sub_and_run_i}_column-{column}.json'
-            if args.verbose:
-                print(f'Writing Best fit model for model {model_name}, {column} to {out_name}')
-            with open(os.path.join(args.out_dir, out_name), 'w') as f:
-                json.dump(ret_dict, f)
-
-        for model_name, description in zip(df['model_name'].unique(), descriptions):
-            parameters_chosen_by_search = []
-            df_to_plot = df[df['model_name'] == model_name].drop(columns='model_name').astype(float)
-            if args.verbose:
-                print(f'Plotting search results...')
-            save_plot(
-                os.path.join(args.out_dir, f'{model_name}_cost_heat_map'),
-                plot_all_search_results_2d_on_diff_colormaps,
-                df_to_plot,
-                verbose=False,
-            )
-            out_name = f'{model_name}_search_summary_on_' \
-                       f'{os.path.basename(args.mat_file).split(".")[0]}_sub{args.sub_and_run_i}.csv'
-            if args.verbose:
-                print(f'Writing search summary to {out_name}')
-            with open(os.path.join(args.out_dir, out_name), 'w') as f:
-                pd.DataFrame(description).to_csv(f)
+    for i, (indexer_name, indexer_values) in enumerate(indexers):
+        out_name = f'{i}_key_{indexer_name}_for_{os.path.basename(args.mat_file).split(".")[0]}' \
+                   f'_sub{args.sub_and_run_i}_{args.out_name}.csv'
+        np.savetxt(os.path.join(args.out_dir, out_name), indexer_values, delimiter=",", fmt="%s")

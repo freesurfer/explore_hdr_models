@@ -10,11 +10,10 @@ Hemodynamic Models and an EEG spike train fits to observed fMRI.
 * Supports missing data in the EEG spike train. 
 * DOES NOT SUPPORT missing data in the observed fMRI!
 
-This package provides 3 commands:
-* `run_search_on_roi_gamma_model.py` Runs a parameter search on a fMRI timecourse
-  that has been preprocessed and saved to a .mat file.
-* `run_search_on_nii_gamma_model.py` runs a parameter search on an input nii
-  file and eeg spike file. WARNING: this function has never been tested.
+This package provides the following commands commands:
+* `run_search_gamma_model.py` Runs a parameter search.
+  Has been tested on ROI data - preprocessed fMRI time courses that have been saved to a .mat file.
+  Theoretically should work on nii files, but has not been tested.
 * `submit_from_config.py` Provides a wrapper to submit a set of search commands from 
   a configuration file.
 
@@ -82,7 +81,7 @@ the installed packages are available for your project.
 
 
 ## Running a Search
-This functionality is provided by `run_search_on_roi_gamma_model.py`.
+This functionality is provided by `run_search_gamma_model.py`.
 
 Inputs:
 * Sequence of EEG spikes - par file
@@ -92,7 +91,9 @@ Inputs:
 
 Outputs:
 * A few seconds of estimated hemodynamic responses plotted across the parameter search space.
-* A pdf containing plots of the estimated fMRI timecourse generated at the default
+* (Optional - only plotted if number of voxels in fMRI intensities is below 
+  `--max-voxels-safe-for-expensive-computation`).
+  A pdf containing plots of the estimated fMRI timecourse generated at the default
   parameters (delta=2.25, tau=1.25, alpha=2):
   * Effect of de-meaning on the estimated fMRI timecourse, if applicable.
   * Comparison
