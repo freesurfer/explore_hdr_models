@@ -5,36 +5,44 @@ import warnings
 from collections import namedtuple
 from typing import Optional, Tuple
 
-MLSC_ROOT_DIR = '/autofs/space/ursa_004/users/'
-URSA_ROOT_DIR = '/local_mount/space/ursa/4/users/'
 
-PROJECT_DIR = 'HDRmodeling'
-
-EEG_DIR = 'EEGspikeTrains'
-FMRI_DIR = 'HDRshape'
-
-NUMBER_OF_TASKS = 500
-
+# Statistics generated for each point on the search space
+# TODO: Optimally, this would be grabbed from the model automatically
 STATISTICS = ('beta_0', 'beta', 'residual_variance', 'correlation_coefficient', 'pearsons_statistic', 'pearsons_pvalue')
 
-EEGData = namedtuple('EEGData', ['data', 'sample_frequency'])
-
-PLOT_DELTA = 2.25
-PLOT_TAU = 1.25
-PLOT_ALPHA = 2
-
+# Keys to be grabbed from the configuration file
 SEARCH_KEYS = ['search-types', 'delta-start', 'delta-end', 'delta-step', 'tau-start', 'tau-end', 'tau-step',
                'alpha-start', 'alpha-end', 'alpha-step', 'save-data-to-mat', 'get-significance']
 
+# Keys to be passed into the generation of each Hemodynamic Response Model instance
+#    also used to grab keys from the configuration file (after replacing each _ with -)
+# TODO: Optimally, this would be grabbed from the model automatically
 HEMODYNAMIC_MODEL_KEYS = ['standardize_est_fmri', 'standardize_input_fmri', 'hemodynamic_response_window',
                           'savgol_filter_window_length', 'savgol_filter_polyorder', 'deriv',
                           'delta', 'mode', 'cval']
 
+# Default 'mid-range' parameter values to generate example plots for
+PLOT_DELTA = 2.25
+PLOT_TAU = 1.25
+PLOT_ALPHA = 2
 
+
+# Tuple to connect EEG spike train data and the sample frequency
+EEGData = namedtuple('EEGData', ['data', 'sample_frequency'])
+
+
+# Class to connect fMRI data, TR, voxel names. Provides abstraction for certain methods,
+# TODO: use of this abstraction wasn't fully tested, so there are probably some places in the code where the default
+#       representation is still hard-coded
 class fMRIData:
     """
-    n: number of fMRI timepoints (TR milliseconds apart)
-    v: number of voxels
+    data: fMRI data (can be actual or estimated)
+    TR: TR fMRI data was acquired at
+    voxel_names: Optional list of strings to provide more human-readable texts for plots
+
+    Let:
+        n=number of fMRI timepoints (TR milliseconds apart)
+        v=number of voxels
     If data is a 1D array, v is assumed to be 1 and dimension is expected to be (n,)
     If data is a 2D array, dimension is expected to be (v, n)
     """
