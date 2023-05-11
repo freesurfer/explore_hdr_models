@@ -79,8 +79,9 @@ class SearchScriptWriter(IterativeScriptWriter):
             out_name = f'{self.fmri_files.get_out_name(fmri_file_identifier)}_{self.par_network}'
         else:
             out_name = self.fmri_files.get_out_name(fmri_file_identifier)
-        lines.append(f'\t--out-name={out_name}_{self.hdr_analysis.get_out_name(hdr_analysis_identifier)}')
+        lines.append(f'\t--out-name={out_name}_{self.hdr_analysis.get_out_name(hdr_analysis_identifier)} \\')
         lines.extend([f'\t{line} \\' for line in self.fmri_files.get_lines_for_identifier(fmri_file_identifier)])
+        lines[-1] = lines[-1][:-2]
         return lines
 
     def get_identifiers(self) -> Generator[Any, None, None]:
