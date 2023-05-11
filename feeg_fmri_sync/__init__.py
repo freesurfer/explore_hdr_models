@@ -1,5 +1,3 @@
-import inspect
-
 from feeg_fmri_sync.simulations import (
     generate_downsampled_simulated_fmri,
     generate_summed_simulated_fmri
@@ -11,7 +9,10 @@ from feeg_fmri_sync.models import (
     SavgolFilterHemodynamicModel
 )
 
-
+# Mapping from string to model
+#   used to assign python model to string passed in by
+#   configuration file or command-line argument
+#   'simulation_generator' is specified for running on simulated data
 SEARCH_TYPES = {
     'classic_hemodynamic': {
         'model': CanonicalHemodynamicModel,
@@ -30,7 +31,3 @@ SEARCH_TYPES = {
         'simulation_generator': generate_downsampled_simulated_fmri,
     }
 }
-
-VALID_KWARGS = [
-    inspect.signature(model['model']) for model in SEARCH_TYPES.values()
-]
