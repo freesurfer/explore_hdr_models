@@ -17,7 +17,7 @@ SEARCH_KEYS = ['search-types', 'delta-start', 'delta-end', 'delta-step', 'tau-st
 # Keys to be passed into the generation of each Hemodynamic Response Model instance
 #    also used to grab keys from the configuration file (after replacing each _ with -)
 # TODO: Optimally, this would be grabbed from the model automatically
-HEMODYNAMIC_MODEL_KEYS = ['standardize_est_fmri', 'standardize_input_fmri', 'hemodynamic_response_window',
+HEMODYNAMIC_MODEL_KEYS = ['de_mean_est_fmri', 'de_mean_input_fmri', 'hemodynamic_response_window',
                           'savgol_filter_window_length', 'savgol_filter_polyorder', 'deriv',
                           'delta', 'mode', 'cval']
 

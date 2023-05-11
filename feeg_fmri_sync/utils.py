@@ -12,6 +12,12 @@ from feeg_fmri_sync.constants import fMRIData
 
 
 def get_i_for_subj_and_run(subj: str, run: str, subj_and_run_list: List[str]):
+    """
+    Get the index of the subj_and_run_list that matches the given subj and run
+
+    For use with the ROI .mat files, which have a variable subIndx that is an index into the
+    subj_and_run_list
+    """
     for i, subj_and_run in enumerate(subj_and_run_list):
         if subj in subj_and_run and run in subj_and_run:
             return i
@@ -19,6 +25,9 @@ def get_i_for_subj_and_run(subj: str, run: str, subj_and_run_list: List[str]):
 
 
 def get_fmri_filepaths(root_dir, subject, hemi, run):
+    """
+    Get the filepaths for the fMRI data for the given subject, hemisphere, and run
+    """
     files = []
     filename = f'res-{run.zfill(3)}.nii*'
     if hemi:
