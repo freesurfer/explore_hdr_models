@@ -16,10 +16,12 @@ SEARCH_KEYS = ['search-types', 'delta-start', 'delta-end', 'delta-step', 'tau-st
 
 # Keys to be passed into the generation of each Hemodynamic Response Model instance
 #    also used to grab keys from the configuration file (after replacing each _ with -)
-# TODO: Optimally, this would be grabbed from the model automatically
+# TODO: Optimally, this would be grabbed from the models automatically
 HEMODYNAMIC_MODEL_KEYS = ['de_mean_est_fmri', 'de_mean_input_fmri', 'hemodynamic_response_window',
-                          'savgol_filter_window_length', 'savgol_filter_polyorder', 'deriv',
-                          'delta', 'mode', 'cval']
+                          # savgol filter params
+                          'savgol_filter_window_length', 'savgol_filter_polyorder', 'deriv',  'delta', 'mode', 'cval',
+                          # gaussian filter params
+                          'gaussian_filter_sigma', 'order', 'mode', 'cval', 'truncate', 'radius']
 
 # Default 'mid-range' parameter values to generate example plots for
 PLOT_DELTA = 2.25
