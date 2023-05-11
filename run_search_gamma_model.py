@@ -45,29 +45,24 @@ from feeg_fmri_sync.search import search_voxels, analyze_best_fit_models, search
 
 parser = argparse.ArgumentParser()
 
-subparsers = parser.add_subparsers(required=True)
-mat_file_parser = subparsers.add_parser('roi')
-mat_file_parser.add_argument('--mat-file', required=True, help=f'ROI mat file path (must define X and subIndx as variables)')
-mat_file_parser.add_argument('--sub-and-run-i', required=True, type=int, help='subIndx value in mat-file for eeg par file')
+########################################################################################################################
+#                                                Required arguments
+########################################################################################################################
+parser.add_argument('--par-file', required=True, help=f'EEG spike train (par file) path')
+parser.add_argument('--out-dir', required=True, help=f'out file directory')
+parser.add_argument('--out-name', required=True, help=f'Name for model')
 
-nii_file_parser = subparsers.add_parser('nii')
-nii_file_parser.add_argument('--nii-file', required=True, help=f'nii file path')
-# If the runtime on an entire nii file is too large, load_from_nii provides a way of chopping up a large
-#   nii file into subsets. These arguments should be uncommented and search_script_writer will need to be updated
-#nii_file_parser.add_argument('--job-number', default=None, type=int, help='Job number assigned by submit_from_config')
-#nii_file_parser.add_argument('--number-of-tasks', default=None, type=int, help='Total number of tasks submitted by submit_from_config')
+########################################################################################################################
+#                                                Optional arguments
+########################################################################################################################
 
-parser.add_argument('--get-significance', action='store_true',
-                    help='Calculating the significance is very computationally expensive. An error will be raised if '
-                         'this flag is passed and the fMRI input data has more voxels than '
-                         '--max-voxels-safe-for-expensive-computation')
+# Computational power configuration
 parser.add_argument('--max-voxels-safe-for-expensive-computation', type=int, default=40,
                     help='Calculating the significance and plotting each voxel fMRI timecourse is very computationally '
                          'expensive. Automatically raise an error if --get-significance is passed with an fMRI input. '
                          'Turns off plotting if the number of voxels is above this number')
 
 # EEG info
-parser.add_argument('--par-file', required=True, help=f'EEG spike train (par file) path')
 parser.add_argument('--eeg-sample-frequency', type=int, default=20)
 
 # fMRI file info
@@ -76,9 +71,13 @@ parser.add_argument('--num-trs-skipped-at-beginning', type=int, default=1)
 
 # Output info
 parser.add_argument('-v', '--verbose', action='store_true')
-parser.add_argument('--out-dir', required=True, help=f'out file directory')
-parser.add_argument('--out-name', required=True, help=f'Name for model')
 parser.add_argument('--save-data-to-mat', action='store_true')
+parser.add_argument('--get-significance', action='store_true',
+                    help='Calculate Pearson\'s Correlation Coefficient and corresponding p-value. '
+                         'WARNING: Calculating the significance is very computationally expensive. '
+                         'An error will be raised if '
+                         'this flag is passed and the fMRI input data has more voxels than '
+                         '--max-voxels-safe-for-expensive-computation')
 
 # Gamma Parameters to Search Over
 parser.add_argument('--delta-start', type=float, default=1)
@@ -91,7 +90,6 @@ parser.add_argument('--alpha-start', type=float, default=1.75)
 parser.add_argument('--alpha-end', type=float, default=2.25, help='inclusive')
 parser.add_argument('--alpha-step', type=float, default=0.05)
 
-
 # Search Type
 parser.add_argument('--search-type', default='classic_hemodynamic', choices=SEARCH_TYPES.keys())
 parser.add_argument('--standardize-est-fmri', action='store_true')
@@ -103,6 +101,24 @@ parser.add_argument('--deriv', type=int)
 parser.add_argument('--delta', type=float)
 parser.add_argument('--mode', type=str)
 parser.add_argument('--cval', type=float)
+
+########################################################################################################################
+#                                       Subparsers (for ROI or voxel analysis)
+########################################################################################################################
+
+subparsers = parser.add_subparsers(required=True)
+mat_file_parser = subparsers.add_parser('roi')
+mat_file_parser.add_argument('--mat-file', required=True,
+                             help=f'ROI mat file path (must define X and subIndx as variables)')
+mat_file_parser.add_argument('--sub-and-run-i', required=True, type=int,
+                             help='subIndx value in mat-file for eeg par file')
+
+nii_file_parser = subparsers.add_parser('nii')
+nii_file_parser.add_argument('--nii-file', required=True, help=f'nii file path')
+# If the runtime on an entire nii file is too large, load_from_nii provides a way of chopping up a large
+#   nii file into subsets. These arguments should be uncommented and search_script_writer will need to be updated
+#nii_file_parser.add_argument('--job-number', default=None, type=int, help='Job number assigned by submit_from_config')
+#nii_file_parser.add_argument('--number-of-tasks', default=None, type=int, help='Total number of tasks submitted by submit_from_config')
 
 
 if __name__ == '__main__':
