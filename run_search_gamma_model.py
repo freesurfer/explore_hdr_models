@@ -95,10 +95,17 @@ parser.add_argument('--search-type', default='classic_hemodynamic', choices=SEAR
 parser.add_argument('--standardize-est-fmri', action='store_true')
 parser.add_argument('--standardize-input-fmri', action='store_true')
 parser.add_argument('--hemodynamic-response-window', type=float, default=30)
+# savgol filter
 parser.add_argument('--savgol-filter-window-length', type=int, default=5)
 parser.add_argument('--savgol-filter-polyorder', type=int, default=5)
 parser.add_argument('--deriv', type=int)
 parser.add_argument('--delta', type=float)
+# gaussian filter
+parser.add_argument('--gaussian-filter-sigma', type=float, default=5)
+parser.add_argument('--order', type=int)
+parser.add_argument('--truncate', type=float)
+parser.add_argument('--radius', type=int)
+# shared by savgol and gaussian filters
 parser.add_argument('--mode', type=str)
 parser.add_argument('--cval', type=float)
 
