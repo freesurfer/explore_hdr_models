@@ -136,9 +136,9 @@ if __name__ == '__main__':
     eeg = EEGData(eeg_data, args.eeg_sample_frequency)
 
     # Load fmri data
-    if getattr(args, 'mat_file'):
+    if getattr(args, 'mat_file', None):
         fmri_voxel_data, fmri_voxel_names = load_roi_from_mat(args.mat_file, args.sub_and_run_i)
-    elif getattr(args, 'nii_file'):
+    elif getattr(args, 'nii_file', None):
         fmri_voxel_data, fmri_voxel_names = load_from_nii(args.nii_file)
         # If the runtime on an entire nii file is too large, load_from_nii provides a way of chopping up a large
         #   nii file into subsets. This command can replace the one from above
