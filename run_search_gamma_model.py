@@ -50,6 +50,8 @@ parser = argparse.ArgumentParser()
 ########################################################################################################################
 parser.add_argument('--par-file', required=True, help=f'EEG spike train (par file) path')
 parser.add_argument('--out-dir', required=True, help=f'out file directory')
+# TODO: I suspect there are several potential bugs when --out-name is not a pythonic underscored name. Adding testing
+#       would be a good idea
 parser.add_argument('--out-name', required=True, help=f'Name for model')
 
 ########################################################################################################################
@@ -128,20 +130,27 @@ if __name__ == '__main__':
     eeg_data = np.fromfile(args.par_file, sep='\n')
     eeg = EEGData(eeg_data, args.eeg_sample_frequency)
 
-    # Flag indicating how big we expect
-    safe_to_be_computationally_expensive = None
     # Load fmri data
     if args.mat_file:
-        safe_to_be_computationally_expensive = True
         fmri_voxel_data, fmri_voxel_names = load_roi_from_mat(args.mat_file, args.sub_and_run_i)
     elif args.nii_file:
-        safe_to_be_computationally_expensive = False
         fmri_voxel_data, fmri_voxel_names = load_from_nii(args.nii_file)
         # If the runtime on an entire nii file is too large, load_from_nii provides a way of chopping up a large
         #   nii file into subsets. This command can replace the one from above
         #fmri_voxel_data, fmri_voxel_names = load_from_nii(args.nii_file, args.job_number, args.number_of_tasks)
     else:
         raise RuntimeError("Neither mat-file nor nii-file was provided. This code should be unreachable!")
+
+    if len(fmri_voxel_data.shape) == 1:
+        safe_to_be_computationally_expensive = 1 < args.max_voxels_safe_for_expensive_computation
+    else:
+        safe_to_be_computationally_expensive = fmri_voxel_data.shape[0] < args.max_voxels_safe_for_expensive_computation
+
+    if args.get_significance and not safe_to_be_computationally_expensive:
+        raise RuntimeError(f'Cannot calculate significance for {fmri_voxel_data.shape[0]} voxels. '
+                           f'--max-voxels-safe-for-expensive-computation is set to '
+                           f'{args.max_voxels_safe_for_expensive_computation}. '
+                           f'Either increase --max-voxels-safe-for-expensive-computation or remove --get-significance')
 
     if not os.path.exists(args.out_dir):
         os.makedirs(args.out_dir)
@@ -159,16 +168,6 @@ if __name__ == '__main__':
         display_plot=False,
         **search_kwargs
     )}
-    # Create a model to plot actual fMRI vs estimated
-    model_for_plotting = SEARCH_TYPES[args.search_type]['model'](
-        eeg,
-        fMRIData(fmri_voxel_data, args.tr, fmri_voxel_names),
-        args.out_name,
-        args.num_trs_skipped_at_beginning,
-        display_plot=False,
-        save_plot_dir=args.out_dir,
-        **search_kwargs
-    )
     # Save plot of how the variables change relating to each other across the search space
     save_plot(
         os.path.join(args.out_dir, f'{args.out_name}_across_search_space'),
@@ -180,8 +179,19 @@ if __name__ == '__main__':
         tau_range,
         alpha_range,
     )
-    model_for_plotting.set_plot_voxels(fmri_voxel_names)
-    model_for_plotting.score(PLOT_DELTA, PLOT_TAU, PLOT_ALPHA)
+    if safe_to_be_computationally_expensive:
+        # Create a model to plot actual fMRI vs estimated
+        model_for_plotting = SEARCH_TYPES[args.search_type]['model'](
+            eeg,
+            fMRIData(fmri_voxel_data, args.tr, fmri_voxel_names),
+            args.out_name,
+            args.num_trs_skipped_at_beginning,
+            display_plot=False,
+            save_plot_dir=args.out_dir,
+            **search_kwargs
+        )
+        model_for_plotting.set_plot_voxels(fmri_voxel_names)
+        model_for_plotting.score(PLOT_DELTA, PLOT_TAU, PLOT_ALPHA)
 
     if args.save_data_to_mat:
         data, variable_names, indexers = search_voxels_in_depth_without_df(models, delta_range, tau_range, alpha_range,
