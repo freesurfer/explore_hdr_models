@@ -8,7 +8,7 @@ import numpy.typing as npt
 import os
 import pandas as pd
 
-from feeg_fmri_sync.constants import PROJECT_DIR, FMRI_DIR, fMRIData
+from feeg_fmri_sync.constants import fMRIData
 
 
 def get_i_for_subj_and_run(subj: str, run: str, subj_and_run_list: List[str]):
@@ -24,12 +24,11 @@ def get_fmri_filepaths(root_dir, subject, hemi, run):
     if hemi:
         for h in hemi:
             hemi_str = f'fsrest_{h}h_native'
-            files.extend(glob.glob(os.path.join(root_dir, PROJECT_DIR, FMRI_DIR, subject, 'rest', hemi_str, 'res',
-                                                filename)))
+            files.extend(glob.glob(os.path.join(root_dir, subject, 'rest', hemi_str, 'res', filename)))
         return files
     # By default, get all hemispheres
     hemi_str = f'fsrest_*h_native'
-    return glob.glob(os.path.join(root_dir, PROJECT_DIR, FMRI_DIR, subject, 'rest', hemi_str, 'res', filename))
+    return glob.glob(os.path.join(root_dir, subject, 'rest', hemi_str, 'res', filename))
 
 
 def get_est_hemodynamic_response(time_steps: npt.NDArray, delta: float, tau: float,
