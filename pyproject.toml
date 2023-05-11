@@ -5,12 +5,14 @@ description = "Find parameters for best fit fmri hemodynamic response model resp
 authors = ["Sarah Guthrie <sguthrie@mgh.harvard.edu>"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.9,<3.12"
 surfa = "^0.4.2"
 matplotlib = "^3.7.0"
-statsmodels = "^0.13.5"
 scikit-learn = "^1.2.1"
 jupyter = "^1.0.0"
+scipy = "^1.10.1"
+pandas = "^2.0.1"
+numpy = "^1.24.3"
 
 [tool.poetry.dev-dependencies]
 ipython = "^8.10.0"
