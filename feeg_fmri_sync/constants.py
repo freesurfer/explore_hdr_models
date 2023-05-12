@@ -3,8 +3,9 @@ import numpy.typing as npt
 import warnings
 
 from collections import namedtuple
-from typing import Optional, Tuple
+from typing import Optional, Tuple, NamedTuple
 
+from numpy import typing as npt
 
 # Statistics generated for each point on the search space
 # TODO: Optimally, this would be grabbed from the model automatically
@@ -106,3 +107,9 @@ class fMRIData:
         # TODO: is it possible to return this dynamically?
         # WARNING: if axis changes, this will currently fail
         return i, self.data[i[0].item(), :]
+
+
+class Indexer(NamedTuple):
+    """For use in converting .mat files to dataframe"""
+    values: npt.NDArray
+    index: int

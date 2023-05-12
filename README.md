@@ -100,9 +100,6 @@ Outputs:
 
 Note: The ability to specify a list of hemodynamic models is not at its full functionality, since it does not 
 
-Note: `run_search_on_nii_gamma_model.py` and `run_search_on_roi_gamma_model.py` have a regrettable amount of code 
-      duplication, which has already caused
-
 ## Setup Searches Automatically
 `submit_from_config.py` orchestrates building the searches and submitting them to a cluster.
 
